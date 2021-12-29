@@ -13,7 +13,9 @@ static function X2AbilityTemplate Create_Ability()
 {
 	local X2AbilityTemplate				Template;
 	local X2AbilityCost_ActionPoints	ActionPointCost;
-	local X2Effect_TemplarShield        Effect;
+	//local X2Effect_TemplarShield        Effect;
+	//local X2Effect_AdditionalAnimSets	AnimSetEffect;
+	local X2Effect_Persistent			Effect;
 	
 	`CREATE_X2ABILITY_TEMPLATE(Template, 'IRI_PsionicShield');
 
@@ -40,9 +42,11 @@ static function X2AbilityTemplate Create_Ability()
 	Template.AbilityCosts.AddItem(ActionPointCost);
 
 	// Effects
-	Effect = new class'X2Effect_TemplarShield';
+	Effect = new class'X2Effect_Persistent';
 	Effect.BuildPersistentEffect(1, false, false,, eGameRule_PlayerTurnBegin);
 	Effect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyHelpText(), Template.IconImage, true, , Template.AbilitySourceName);
+	Effect.EffectName = 'IRI_PsionicShield_Effect';
+	//AnimSetEffect.AddAnimSetWithPath("");
 	//Effect.EffectName = 'HunkerDown';
 	Template.AddTargetEffect(Effect);
 
@@ -54,7 +58,10 @@ static function X2AbilityTemplate Create_Ability()
 	Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
 	Template.BuildInterruptGameStateFn = TypicalAbility_BuildInterruptGameState;
 	Template.bShowActivation = true;
-	Template.bSkipFireAction = true; // Activation animation unnecessary; hunker down animation will take care of it
+	Template.CustomSelfFireAnim = 'HL_TemplarShield';
+	Template.CustomFireAnim = 'HL_TemplarShield';
+	Template.bSkipExitCoverWhenFiring = true;
+	Template.bSkipFireAction = false;
 	Template.OverrideAbilityAvailabilityFn = Parry_OverrideAbilityAvailability;
 
 	Template.OverrideAbilities.AddItem('ParryActivate');

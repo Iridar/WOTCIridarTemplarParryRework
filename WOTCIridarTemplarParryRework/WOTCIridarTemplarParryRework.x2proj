@@ -28,6 +28,9 @@
     <Content Include="Config\Base\XComGame.ini">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Config\Base\XComGameData.ini">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Content\IRIParryRework.upk">
       <SubType>Content</SubType>
     </Content>

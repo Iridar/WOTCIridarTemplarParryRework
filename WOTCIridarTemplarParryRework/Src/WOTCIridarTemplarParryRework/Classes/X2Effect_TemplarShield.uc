@@ -219,8 +219,8 @@ function bool ShouldUseMidpointCameraForTarget(XComGameState_Ability AbilityStat
 */
 defaultproperties
 {
-	EffectAppliedAnimName = "HL_HunkerDwn_Start"
-	EffectRemovedAnimName = "HL_HunkerDwn_Start"
+	//EffectAppliedAnimName = "HL_HunkerDwn_Start"
+	//EffectRemovedAnimName = "HL_HunkerDwn_Start"
 
 	DuplicateResponse = eDupe_Ignore
 	EffectName = "IRI_X2Effect_TemplarShield_Effect"
