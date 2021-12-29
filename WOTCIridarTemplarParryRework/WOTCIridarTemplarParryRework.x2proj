@@ -31,10 +31,13 @@
     <Content Include="Config\Base\XComGameData.ini">
       <SubType>Content</SubType>
     </Content>
-    <Content Include="Content\IRIParryRework.upk">
+    <Content Include="ContentForCook\IRIParryRework.upk">
       <SubType>Content</SubType>
     </Content>
-    <Content Include="Content\IRIParryReworkPerk.upk">
+    <Content Include="ContentForCook\IRIParryReworkPerk.upk">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="ContentOptions.json">
       <SubType>Content</SubType>
     </Content>
     <Content Include="ReadMe.txt" />
