@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Default" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Guid>06a4cf23-cd9f-4e0e-9cf6-492300d5a639</Guid>
+    <Name>WOTCIridarTemplarParryRework</Name>
+    <Description>Reworks Templars' Parry ability so it creates a persistent psionic shield.</Description>
+    <SteamPublishID>0</SteamPublishID>
+    <AssemblyName>WOTCIridarTemplarParryRework</AssemblyName>
+    <RootNamespace>WOTCIridarTemplarParryRework</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="Config\" />
+    <Folder Include="Config\Base" />
+    <Folder Include="Localization\" />
+    <Folder Include="Content" />
+    <Folder Include="ContentForCook" />
+    <Folder Include="Src\" />
+    <Folder Include="Src\WOTCIridarTemplarParryRework\" />
+    <Folder Include="Src\WOTCIridarTemplarParryRework\Classes\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Config\Base\XComEditor.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Config\Base\XComEngine.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Config\Base\XComGame.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Content\IRIParryRework.upk">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Content\IRIParryReworkPerk.upk">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="ReadMe.txt" />
+    <Content Include="ModPreview.jpg" />
+    <Content Include="Localization\XComGame.int" />
+    <Content Include="Src\WOTCIridarTemplarParryRework\Classes\X2Ability_ParryRework.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WOTCIridarTemplarParryRework\Classes\X2DLCInfo_ParryRework.uc" />
+    <Content Include="Src\WOTCIridarTemplarParryRework\Classes\X2Effect_TemplarShield.uc">
+      <SubType>Content</SubType>
+    </Content>
+  </ItemGroup>
+  <PropertyGroup>
+    <SolutionRoot>$(MSBuildProjectDirectory)\..\</SolutionRoot>
+    <ScriptsDir>$(SolutionRoot).scripts\</ScriptsDir>
+    <BuildCommonRoot>$(ScriptsDir)X2ModBuildCommon\</BuildCommonRoot>
+  </PropertyGroup>
+  <Import Project="$(BuildCommonRoot)XCOM2.targets" />
+</Project>
