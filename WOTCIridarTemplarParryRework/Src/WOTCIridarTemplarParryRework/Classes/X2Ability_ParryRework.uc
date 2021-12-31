@@ -97,10 +97,10 @@ simulated function OnShieldRemoved_BuildVisualization(XComGameState VisualizeGam
 		SoundAndFlyOver.SetSoundAndFlyOverParameters(None, class'XLocalizedData'.default.ShieldRemovedMsg, '', eColor_Bad, , 0.75, true);
 
 		UnitPawn = Unit.GetPawn();
-		if (UnitPawn != none && UnitPawn.GetAnimTreeController().CanPlayAnimation('HL_TemplarShield'))
+		if (UnitPawn != none && UnitPawn.GetAnimTreeController().CanPlayAnimation('HL_RemoveTemplarShield'))
 		{
 			PlayAnimation = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded));
-			PlayAnimation.Params.AnimName = 'HL_TemplarShield';
+			PlayAnimation.Params.AnimName = 'HL_RemoveTemplarShield';
 		}
 	}
 }
