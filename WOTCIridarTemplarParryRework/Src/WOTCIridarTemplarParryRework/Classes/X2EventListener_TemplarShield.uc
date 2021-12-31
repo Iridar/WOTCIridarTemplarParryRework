@@ -30,55 +30,71 @@ static function CHEventListenerTemplate Create_ListenerTemplate()
 	Template.RegisterInStrategy = false;
 
 	Template.AddCHEvent('OverrideHitEffects', OnOverrideHitEffects, ELD_Immediate, 50);
+	Template.AddCHEvent('OverrideMetaHitEffect', OnOverrideMetaHitEffect, ELD_Immediate, 50);
 	Template.AddCHEvent('AbilityActivated', OnAbilityActivated, ELD_Immediate, 50);
 
 	return Template;
 }
 
-static function EventListenerReturn OnOverrideHitEffects(Object EventData, Object EventSource, XComGameState NullGameState, Name Event, Object CallbackData)
+static private function EventListenerReturn OnOverrideHitEffects(Object EventData, Object EventSource, XComGameState NullGameState, Name Event, Object CallbackData)
 {
-   // local XComUnitPawn Pawn;
-    local XComLWTuple Tuple;
-    //local bool OverrideHitEffect;
-    local float Damage;
-    local Actor InstigatedBy;
-    local vector HitLocation;
-    local name DamageTypeName;
-    local vector Momentum;
-    local bool bIsUnitRuptured;
-    local EAbilityHitResult HitResult;
+    local XComUnitPawn			Pawn;
+    local XComLWTuple			Tuple;
+    local XComGameState_Unit	TargetUnit;
 
-    //Pawn = XComUnitPawn(EventSource);
+    Pawn = XComUnitPawn(EventSource);
+	if (Pawn == none)
+		return ELR_NoInterrupt;
+
     Tuple = XComLWTuple(EventData);
+	if (Tuple == none)
+		return ELR_NoInterrupt;
+			
+	TargetUnit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(Pawn.ObjectID));
+	`LOG(GetFuncName() @ TargetUnit.GetFullName() @ TargetUnit.ObjectID,, 'IRITEST');
 
-    Damage = Tuple.Data[1].f;
-    InstigatedBy = Actor(Tuple.Data[2].o);
-    HitLocation = Tuple.Data[3].v;
-    DamageTypeName = Tuple.Data[4].n;
-    Momentum = Tuple.Data[5].v;
-    bIsUnitRuptured = Tuple.Data[6].b;
-    HitResult = EAbilityHitResult(Tuple.Data[7].i);
-
-    // Your code here
-	`LOG(`showvar(Damage),, 'IRITEST');
-	`LOG(`showvar(DamageTypeName),, 'IRITEST');
-	`LOG(`showvar(HitResult),, 'IRITEST');
-
-	HitResult = eHit_Parry;
-
-   // Tuple.Data[0].b = OverrideHitEffect;
-    Tuple.Data[1].f = Damage;
-    Tuple.Data[2].o = InstigatedBy;
-    Tuple.Data[3].v = HitLocation;
-    Tuple.Data[4].n = DamageTypeName;
-    Tuple.Data[5].v = Momentum;
-    Tuple.Data[6].b = bIsUnitRuptured;
-    Tuple.Data[7].i = HitResult;
+	if (TargetUnit != none && TargetUnit.IsUnitAffectedByEffectName('IRI_PsionicShield_Effect')) // TODO: This check fails if the effect was removed by the attack
+	{
+		`LOG(GetFuncName() @ "overriding hit effect hit result",, 'IRITEST');
+		Tuple.Data[0].b = false;
+		Tuple.Data[7].i = eHit_Reflect; // HitResult - Using eHit_Reflect to make hit effects spawn on the left hand.
+	}
 
     return ELR_NoInterrupt;
 }
 
-static function EventListenerReturn OnAbilityActivated(Object EventData, Object EventSource, XComGameState NewGameState, Name Event, Object CallbackData)
+static private function EventListenerReturn OnOverrideMetaHitEffect(Object EventData, Object EventSource, XComGameState NullGameState, Name Event, Object CallbackData)
+{
+    local XComUnitPawn			Pawn;
+    local XComLWTuple			Tuple;
+    local XComGameState_Unit	TargetUnit;
+
+    Pawn = XComUnitPawn(EventSource);
+	if (Pawn == none)
+		return ELR_NoInterrupt;
+
+    Tuple = XComLWTuple(EventData);
+	if (Tuple == none)
+		return ELR_NoInterrupt;
+			
+	TargetUnit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(Pawn.ObjectID));
+	`LOG(GetFuncName() @ TargetUnit.GetFullName() @ TargetUnit.ObjectID @ "HP:" @ TargetUnit.GetCurrentStat(eStat_HP) @ "Shield HP:" @ TargetUnit.GetCurrentStat(eStat_ShieldHP),, 'IRITEST');
+
+	if (TargetUnit != none && TargetUnit.IsUnitAffectedByEffectName('IRI_PsionicShield_Effect')) // TODO: This check fails if the effect was removed by the attack
+	{
+		`LOG(GetFuncName() @ "overriding hit effect hit result",, 'IRITEST');
+		Tuple.Data[0].b = false;		// Setting to *not* override the Hit Effect, so it can play as we want. 
+		Tuple.Data[5].i = eHit_Reflect; // HitResult - Using eHit_Reflect to make hit effects spawn on the left hand.
+	}
+
+	// Previous game state has same stats.
+	//TargetUnit = XComGameState_Unit(`XCOMHISTORY.GetPreviousGameStateForObject(TargetUnit));
+	//`LOG("Previous HP:" @ TargetUnit.GetCurrentStat(eStat_HP) @ "Shield HP:" @ TargetUnit.GetCurrentStat(eStat_ShieldHP),, 'IRITEST');
+
+    return ELR_NoInterrupt;
+}
+
+static private function EventListenerReturn OnAbilityActivated(Object EventData, Object EventSource, XComGameState NewGameState, Name Event, Object CallbackData)
 {
 	local XComGameStateContext_Ability	AbilityContext;
 	local XComGameState_Unit			TargetUnit;
@@ -123,7 +139,7 @@ static function EventListenerReturn OnAbilityActivated(Object EventData, Object 
 	return ELR_NoInterrupt;
 }
 
-static function ReplaceHitAnimation_PostBuildVis(XComGameState VisualizeGameState)
+static private function ReplaceHitAnimation_PostBuildVis(XComGameState VisualizeGameState)
 {
 	local XComGameStateContext_Ability	AbilityContext;
 	local XComGameStateVisualizationMgr	VisMgr;
