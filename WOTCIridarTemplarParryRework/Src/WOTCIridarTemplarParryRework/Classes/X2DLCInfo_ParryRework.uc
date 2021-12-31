@@ -7,8 +7,17 @@ class X2DLCInfo_ParryRework extends X2DownloadableContentInfo;
 - The normal hit taken, where the shield holds
 - The "shield shatter" animation where the overall damage taken reaches equal to the deployed shield, causing the shots to destroy the shield
 - A variant of the shield shatter anim where the overall damage is greater so the shot not only destroys the shield but also damages the templar
+- // TODO: Handle death action too
 And the undeploy animation that happens when the shield effect expires
 Well, I guess instead of ablative, it can display the amount of damage the templar can take before the shield is destroyed (just like amplify displays its ticks) so it feels more unique and doesn't tread on shield hp 
+
+
+1. Player casts "One For All", templar plays animation of deploying the shield you saw in the video
+2. UpdateAnimations() applies ballistic shield animations to the Templar, checking for the "One For All" effect name. 
+3. Templar now uses Ballistic Shield animations (primarily for idle, but maybe even moving or attacking in case extra actions are granted to them after the fact)
+4. Templar will now play custom "get hit" animations when attacked by enemies. 
+5. When the effect ends, either by being removed by an attack or due to next turn beginning, the shield effect disappears
+6. UpdateAnimations sees the Templar is no longer affected by the effect, and will not apply ballistic shield animations.
 */
 
 /// <summary>

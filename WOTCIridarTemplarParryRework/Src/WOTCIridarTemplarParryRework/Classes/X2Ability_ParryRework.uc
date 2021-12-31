@@ -11,11 +11,10 @@ static function array<X2DataTemplate> CreateTemplates()
 
 static function X2AbilityTemplate Create_Ability()
 {
-	local X2AbilityTemplate				Template;
-	local X2AbilityCost_ActionPoints	ActionPointCost;
-	//local X2Effect_TemplarShield        Effect;
-	//local X2Effect_AdditionalAnimSets	AnimSetEffect;
-	local X2Effect_Persistent			Effect;
+	local X2AbilityTemplate					Template;
+	local X2AbilityCost_ActionPoints		ActionPointCost;
+	local X2Effect_TemplarShieldAnimations	AnimSetEffect;
+	local X2Effect_EnergyShield				ShieldedEffect;
 	
 	`CREATE_X2ABILITY_TEMPLATE(Template, 'IRI_PsionicShield');
 
@@ -42,13 +41,18 @@ static function X2AbilityTemplate Create_Ability()
 	Template.AbilityCosts.AddItem(ActionPointCost);
 
 	// Effects
-	Effect = new class'X2Effect_Persistent';
-	Effect.BuildPersistentEffect(1, false, false,, eGameRule_PlayerTurnBegin);
-	Effect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyHelpText(), Template.IconImage, true, , Template.AbilitySourceName);
-	Effect.EffectName = 'IRI_PsionicShield_Effect';
-	//AnimSetEffect.AddAnimSetWithPath("");
-	//Effect.EffectName = 'HunkerDown';
-	Template.AddTargetEffect(Effect);
+	AnimSetEffect = new class'X2Effect_TemplarShieldAnimations';
+	AnimSetEffect.BuildPersistentEffect(1, false, false,, eGameRule_PlayerTurnBegin);
+	AnimSetEffect.AddAnimSetWithPath("WoTC_Shield_Animations.Anims.AS_Shield");
+	Template.AddTargetEffect(AnimSetEffect);
+
+	ShieldedEffect = new class'X2Effect_EnergyShield';
+	ShieldedEffect.BuildPersistentEffect(1, false, true,, eGameRule_PlayerTurnBegin);
+	ShieldedEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyHelpText(), Template.IconImage, true, , Template.AbilitySourceName);
+	ShieldedEffect.AddPersistentStatChange(eStat_ShieldHP, 5);
+	ShieldedEffect.EffectName = 'IRI_PsionicShield_Effect';
+	ShieldedEffect.EffectRemovedVisualizationFn = OnShieldRemoved_BuildVisualization;
+	Template.AddTargetEffect(ShieldedEffect);
 
 	// State and Viz
 	Template.Hostility = eHostility_Defensive;
@@ -64,8 +68,8 @@ static function X2AbilityTemplate Create_Ability()
 	Template.bSkipFireAction = false;
 	Template.OverrideAbilityAvailabilityFn = Parry_OverrideAbilityAvailability;
 
-	Template.OverrideAbilities.AddItem('ParryActivate');
-	Template.OverrideAbilities.AddItem('Parry');
+	//Template.OverrideAbilities.AddItem('ParryActivate');
+	//Template.OverrideAbilities.AddItem('Parry');
 
 	return Template;
 }
@@ -76,6 +80,28 @@ private static function Parry_OverrideAbilityAvailability(out AvailableAction Ac
 	{
 		if (OwnerState.ActionPoints.Length == 1 && OwnerState.ActionPoints[0] == 'Momentum')
 			Action.ShotHUDPriority = class'UIUtilities_Tactical'.const.PARRY_PRIORITY;
+	}
+}
+
+simulated function OnShieldRemoved_BuildVisualization(XComGameState VisualizeGameState, out VisualizationActionMetadata ActionMetadata, const name EffectApplyResult)
+{
+	local X2Action_PlaySoundAndFlyOver	SoundAndFlyOver;
+	local X2Action_PlayAnimation		PlayAnimation;
+	local XGUnit						Unit;
+	local XComUnitPawn					UnitPawn;
+
+	Unit = XGUnit(ActionMetadata.VisualizeActor);
+	if (Unit != none && Unit.IsAlive())
+	{
+		SoundAndFlyOver = X2Action_PlaySoundAndFlyOver(class'X2Action_PlaySoundAndFlyOver'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded));
+		SoundAndFlyOver.SetSoundAndFlyOverParameters(None, class'XLocalizedData'.default.ShieldRemovedMsg, '', eColor_Bad, , 0.75, true);
+
+		UnitPawn = Unit.GetPawn();
+		if (UnitPawn != none && UnitPawn.GetAnimTreeController().CanPlayAnimation('HL_TemplarShield'))
+		{
+			PlayAnimation = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded));
+			PlayAnimation.Params.AnimName = 'HL_TemplarShield';
+		}
 	}
 }
 

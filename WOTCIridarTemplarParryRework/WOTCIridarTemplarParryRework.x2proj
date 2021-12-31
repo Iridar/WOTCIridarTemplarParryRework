@@ -46,8 +46,17 @@
     <Content Include="Src\WOTCIridarTemplarParryRework\Classes\X2Ability_ParryRework.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WOTCIridarTemplarParryRework\Classes\X2Action_ApplyWeaponDamageToUnit_TemplarShield.uc">
+      <SubType>Content</SubType>
+    </Content>
     <Content Include="Src\WOTCIridarTemplarParryRework\Classes\X2DLCInfo_ParryRework.uc" />
     <Content Include="Src\WOTCIridarTemplarParryRework\Classes\X2Effect_TemplarShield.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WOTCIridarTemplarParryRework\Classes\X2Effect_TemplarShieldAnimations.uc">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Src\WOTCIridarTemplarParryRework\Classes\X2EventListener_TemplarShield.uc">
       <SubType>Content</SubType>
     </Content>
   </ItemGroup>
