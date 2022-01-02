@@ -44,6 +44,7 @@ static function X2AbilityTemplate Create_Ability()
 	AnimSetEffect = new class'X2Effect_TemplarShieldAnimations';
 	AnimSetEffect.BuildPersistentEffect(1, false, false,, eGameRule_PlayerTurnBegin);
 	AnimSetEffect.AddAnimSetWithPath("WoTC_Shield_Animations.Anims.AS_Shield");
+	AnimSetEffect.AddAnimSetWithPath("IRIParryReworkAnims.Anims.AS_TemplarShield"); // Flinch and Death replacement
 	Template.AddTargetEffect(AnimSetEffect);
 
 	ShieldedEffect = new class'X2Effect_EnergyShield';

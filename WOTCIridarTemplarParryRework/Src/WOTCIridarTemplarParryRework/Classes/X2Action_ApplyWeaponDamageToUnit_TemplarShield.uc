@@ -13,7 +13,7 @@ simulated function Name ComputeAnimationToPlay(const string AppendEffectString="
 
 	`LOG("Computed AnimName:" @ AnimName,, 'IRITEST');
 
-	return 'HL_Deflect_Storm';
+	return 'HL_Deflect_Full';
 
 	//return AnimName;
 }
