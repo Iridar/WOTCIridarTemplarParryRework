@@ -149,8 +149,12 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 	local VisualizationActionMetadata	ActionMetadata;
 	local XComGameState_Unit								UnitState;
 	local X2Action_ApplyWeaponDamageToUnit					DamageAction;
+	local X2Action_ApplyWeaponDamageToUnit_TemplarShield	AdditionalAction;
 	local X2Action_ApplyWeaponDamageToUnit_TemplarShield	ReplaceAction;
 	local X2Action_MarkerNamed								EmptyAction;
+	local X2Action											ParentAction;
+	local X2Action											ParentParentAction;
+	local array<X2Action>									ParentActions;
 
 	AbilityContext = XComGameStateContext_Ability(VisualizeGameState.GetContext());
 	if (AbilityContext == none)
@@ -159,79 +163,139 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 	VisMgr = `XCOMVISUALIZATIONMGR;
 
 	// Replace Damage Unit actions that were created for all units affected by the Templar Shield effect.
-	// The replacement action is largely the same, but it plays different animations depending on incoming damage.
 	VisMgr.GetNodesOfType(VisMgr.BuildVisTree, class'X2Action_ApplyWeaponDamageToUnit', FindActions);
 	foreach FindActions(FindAction)
 	{
 		ActionMetadata = FindAction.Metadata;
 		UnitState = XComGameState_Unit(FindAction.Metadata.StateObject_OldState);
-		if (UnitState == none || !UnitState.IsUnitAffectedByEffectName('IRI_PsionicShield_Effect'))
+		if (UnitState == none || !UnitState.IsUnitAffectedByEffectName('IRI_PsionicShield_Effect')) // TODO: This may need to be adjusted
 			continue;
 
-		DamageAction = X2Action_ApplyWeaponDamageToUnit(FindAction);
-		ReplaceAction = X2Action_ApplyWeaponDamageToUnit_TemplarShield(class'X2Action_ApplyWeaponDamageToUnit_TemplarShield'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, DamageAction.ParentActions));//auto-parent to damage initiating action
+		// TODO: This may need to be adjusted depending on if grazes count as hit or miss
+		`LOG("Graze is hit :" @ AbilityContext.IsHitResultHit(eHit_Graze),, 'IRITEST'); // true
+		`LOG("Graze is miss:" @ AbilityContext.IsHitResultMiss(eHit_Graze),, 'IRITEST');// false
+		
+		// We don't care about misses
+		if (!WasUnitHit(AbilityContext, UnitState.ObjectID))
+			continue;		
 
-		// Copy all of the action's properties
-		ReplaceAction.AbilityTemplate = DamageAction.AbilityTemplate;
-		ReplaceAction.DamageDealer = DamageAction.DamageDealer;
-		ReplaceAction.SourceUnitState = DamageAction.SourceUnitState;
-		ReplaceAction.m_iDamage = DamageAction.m_iDamage;
-		ReplaceAction.m_iMitigated = DamageAction.m_iMitigated;
-		ReplaceAction.m_iShielded = DamageAction.m_iShielded;
-		ReplaceAction.m_iShredded = DamageAction.m_iShredded;
-		ReplaceAction.DamageResults = DamageAction.DamageResults;
-		ReplaceAction.HitResults = DamageAction.HitResults;
-		ReplaceAction.DamageTypeName = DamageAction.DamageTypeName;
-		ReplaceAction.m_vHitLocation = DamageAction.m_vHitLocation;
-		ReplaceAction.m_vMomentum = DamageAction.m_vMomentum;
-		ReplaceAction.bGoingToDeathOrKnockback = DamageAction.bGoingToDeathOrKnockback;
-		ReplaceAction.bWasHit = DamageAction.bWasHit;
-		ReplaceAction.bWasCounterAttack = DamageAction.bWasCounterAttack;
-		ReplaceAction.bCounterAttackAnim = DamageAction.bCounterAttackAnim;
-		ReplaceAction.AbilityContext = DamageAction.AbilityContext;
-		ReplaceAction.AnimParams = DamageAction.AnimParams;
-		ReplaceAction.HitResult = DamageAction.HitResult;
-		ReplaceAction.TickContext = DamageAction.TickContext;
-		ReplaceAction.AreaDamageContext = DamageAction.AreaDamageContext;
-		ReplaceAction.FallingContext = DamageAction.FallingContext;
-		ReplaceAction.WorldEffectsContext = DamageAction.WorldEffectsContext;
-		ReplaceAction.TickIndex = DamageAction.TickIndex;
-		ReplaceAction.PlayingSequence = DamageAction.PlayingSequence;
-		ReplaceAction.OriginatingEffect = DamageAction.OriginatingEffect;
-		ReplaceAction.AncestorEffect = DamageAction.AncestorEffect;
-		ReplaceAction.bHiddenAction = DamageAction.bHiddenAction;
-		ReplaceAction.CounterAttackTargetRef = DamageAction.CounterAttackTargetRef;
-		ReplaceAction.bDoOverrideAnim = DamageAction.bDoOverrideAnim;
-		ReplaceAction.OverrideOldUnitState = DamageAction.OverrideOldUnitState;
-		ReplaceAction.OverridePersistentEffectTemplate = DamageAction.OverridePersistentEffectTemplate;
-		ReplaceAction.OverrideAnimEffectString = DamageAction.OverrideAnimEffectString;
-		ReplaceAction.bPlayDamageAnim = DamageAction.bPlayDamageAnim;
-		ReplaceAction.bIsUnitRuptured = DamageAction.bIsUnitRuptured;
-		ReplaceAction.bShouldContinueAnim = DamageAction.bShouldContinueAnim;
-		ReplaceAction.bMoving = DamageAction.bMoving;
-		ReplaceAction.bSkipWaitForAnim = DamageAction.bSkipWaitForAnim;
-		ReplaceAction.RunningAction = DamageAction.RunningAction;
-		ReplaceAction.HitReactDelayTimeToDeath = DamageAction.HitReactDelayTimeToDeath;
-		ReplaceAction.UnitState = DamageAction.UnitState;
-		ReplaceAction.GroupState = DamageAction.GroupState;
-		ReplaceAction.ScanGroup = DamageAction.ScanGroup;
-		ReplaceAction.ScanUnit = DamageAction.ScanUnit;
-		ReplaceAction.kPerkContent = DamageAction.kPerkContent;
-		ReplaceAction.TargetAdditiveAnims = DamageAction.TargetAdditiveAnims;
-		ReplaceAction.bShowFlyovers = DamageAction.bShowFlyovers;
-		ReplaceAction.bCombineFlyovers = DamageAction.bCombineFlyovers;
-		ReplaceAction.EffectHitEffectsOverride = DamageAction.EffectHitEffectsOverride;
-		ReplaceAction.CounterattackedAction = DamageAction.CounterattackedAction;
+		DamageAction = X2Action_ApplyWeaponDamageToUnit(FindAction);
+		`LOG(GetFuncName() @ UnitState.GetFullName() @ XComGameState_Unit(ActionMetadata.StateObject_OldState).GetCurrentStat(eStat_ShieldHP) @ "->" @ XComGameState_Unit(ActionMetadata.StateObject_NewState).GetCurrentStat(eStat_ShieldHP),, 'IRITEST'); // 5 -> 1
+
+		// #1. Insert an additional Damage Unit action. It will be responsible for playing the "unit shields themselves from the attack" animation.
+		// This action needs to be parented not to the Fire Action, but to the parents of the Fire Action, so they can begin playing simultaneously,
+		// so the starts reacting before getting hit with the first projectile.
+
+		// Gather parents of parents of the Damage Unit action.
+		// The parent of the Damage Unit action should be the Fire Action,
+		// so parent of the Fire Action should be Exit Cover action.
+		ParentActions.Length = 0;
+		foreach DamageAction.ParentActions(ParentAction)
+		{
+			foreach ParentAction.ParentActions(ParentParentAction)
+			{
+				ParentActions.AddItem(ParentParentAction);
+			}
+		}
+
+		AdditionalAction = X2Action_ApplyWeaponDamageToUnit_TemplarShield(class'X2Action_ApplyWeaponDamageToUnit_TemplarShield'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, ParentActions));
+		CopyActionProperties(AdditionalAction, DamageAction);
+		AdditionalAction.bShowFlyovers = false;
 
 		// Make child actions of the original Damage Unit action become children of the replacement action.
+		foreach DamageAction.ChildActions(ChildAction)
+		{
+			VisMgr.ConnectAction(ChildAction, VisMgr.BuildVisTree, false, AdditionalAction);
+		}
+
+		// #2. Replace the original Damage Unit action.
+		// Since we now have a separate action for playing the "unit gets hit" animation, 
+		// we replace the original Damage Unit action with a custom version that can be set to skip playing any animations.
+		// We keep it in the tree so we still have a Damage Unit action as a child of the Fire Action so it can show the damage flyover when the unit gets hit.
+		ReplaceAction = X2Action_ApplyWeaponDamageToUnit_TemplarShield(class'X2Action_ApplyWeaponDamageToUnit_TemplarShield'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, DamageAction.ParentActions));
+		CopyActionProperties(ReplaceAction, DamageAction);
+		ReplaceAction.bSkipAnimation = true;
+
 		foreach DamageAction.ChildActions(ChildAction)
 		{
 			VisMgr.ConnectAction(ChildAction, VisMgr.BuildVisTree, false, ReplaceAction);
 		}
 
-		// Kill the original Damage Unit action.
+		// Nuke the original action out of the tree.
 		EmptyAction = X2Action_MarkerNamed(class'X2Action'.static.CreateVisualizationActionClass(class'X2Action_MarkerNamed', DamageAction.StateChangeContext));
-		EmptyAction.SetName("ReplaceUnitAction");
+		EmptyAction.SetName("ReplaceDamageUnitAction");
 		VisMgr.ReplaceNode(EmptyAction, DamageAction);
 	}
+}
+
+// X2Action::Init() runs right before action starts playing, so we can't get this info from the action itself.
+private static function bool WasUnitHit(const XComGameStateContext_Ability AbilityContext, const int ObjectID)
+{
+	local int Index;
+
+	if (AbilityContext.InputContext.PrimaryTarget.ObjectID == ObjectID)
+	{
+		return AbilityContext.IsResultContextHit();
+	}
+
+	Index = AbilityContext.InputContext.MultiTargets.Find('ObjectID', ObjectID);
+	if (Index != INDEX_NONE)
+	{
+		return AbilityContext.IsResultContextMultiHit(Index);
+	}
+	return false;
+}
+
+private static function CopyActionProperties(out X2Action_ApplyWeaponDamageToUnit_TemplarShield ReplaceAction, out X2Action_ApplyWeaponDamageToUnit DamageAction)
+{
+	ReplaceAction.AbilityTemplate = DamageAction.AbilityTemplate;
+	ReplaceAction.DamageDealer = DamageAction.DamageDealer;
+	ReplaceAction.SourceUnitState = DamageAction.SourceUnitState;
+	ReplaceAction.m_iDamage = DamageAction.m_iDamage;
+	ReplaceAction.m_iMitigated = DamageAction.m_iMitigated;
+	ReplaceAction.m_iShielded = DamageAction.m_iShielded;
+	ReplaceAction.m_iShredded = DamageAction.m_iShredded;
+	ReplaceAction.DamageResults = DamageAction.DamageResults;
+	ReplaceAction.HitResults = DamageAction.HitResults;
+	ReplaceAction.DamageTypeName = DamageAction.DamageTypeName;
+	ReplaceAction.m_vHitLocation = DamageAction.m_vHitLocation;
+	ReplaceAction.m_vMomentum = DamageAction.m_vMomentum;
+	ReplaceAction.bGoingToDeathOrKnockback = DamageAction.bGoingToDeathOrKnockback;
+	ReplaceAction.bWasHit = DamageAction.bWasHit;
+	ReplaceAction.bWasCounterAttack = DamageAction.bWasCounterAttack;
+	ReplaceAction.bCounterAttackAnim = DamageAction.bCounterAttackAnim;
+	ReplaceAction.AbilityContext = DamageAction.AbilityContext;
+	ReplaceAction.AnimParams = DamageAction.AnimParams;
+	ReplaceAction.HitResult = DamageAction.HitResult;
+	ReplaceAction.TickContext = DamageAction.TickContext;
+	ReplaceAction.AreaDamageContext = DamageAction.AreaDamageContext;
+	ReplaceAction.FallingContext = DamageAction.FallingContext;
+	ReplaceAction.WorldEffectsContext = DamageAction.WorldEffectsContext;
+	ReplaceAction.TickIndex = DamageAction.TickIndex;
+	ReplaceAction.PlayingSequence = DamageAction.PlayingSequence;
+	ReplaceAction.OriginatingEffect = DamageAction.OriginatingEffect;
+	ReplaceAction.AncestorEffect = DamageAction.AncestorEffect;
+	ReplaceAction.bHiddenAction = DamageAction.bHiddenAction;
+	ReplaceAction.CounterAttackTargetRef = DamageAction.CounterAttackTargetRef;
+	ReplaceAction.bDoOverrideAnim = DamageAction.bDoOverrideAnim;
+	ReplaceAction.OverrideOldUnitState = DamageAction.OverrideOldUnitState;
+	ReplaceAction.OverridePersistentEffectTemplate = DamageAction.OverridePersistentEffectTemplate;
+	ReplaceAction.OverrideAnimEffectString = DamageAction.OverrideAnimEffectString;
+	ReplaceAction.bPlayDamageAnim = DamageAction.bPlayDamageAnim;
+	ReplaceAction.bIsUnitRuptured = DamageAction.bIsUnitRuptured;
+	ReplaceAction.bShouldContinueAnim = DamageAction.bShouldContinueAnim;
+	ReplaceAction.bMoving = DamageAction.bMoving;
+	ReplaceAction.bSkipWaitForAnim = DamageAction.bSkipWaitForAnim;
+	ReplaceAction.RunningAction = DamageAction.RunningAction;
+	ReplaceAction.HitReactDelayTimeToDeath = DamageAction.HitReactDelayTimeToDeath;
+	ReplaceAction.UnitState = DamageAction.UnitState;
+	ReplaceAction.GroupState = DamageAction.GroupState;
+	ReplaceAction.ScanGroup = DamageAction.ScanGroup;
+	ReplaceAction.ScanUnit = DamageAction.ScanUnit;
+	ReplaceAction.kPerkContent = DamageAction.kPerkContent;
+	ReplaceAction.TargetAdditiveAnims = DamageAction.TargetAdditiveAnims;
+	ReplaceAction.bShowFlyovers = DamageAction.bShowFlyovers;
+	ReplaceAction.bCombineFlyovers = DamageAction.bCombineFlyovers;
+	ReplaceAction.EffectHitEffectsOverride = DamageAction.EffectHitEffectsOverride;
+	ReplaceAction.CounterattackedAction = DamageAction.CounterattackedAction;
 }

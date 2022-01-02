@@ -68,6 +68,7 @@ static function X2AbilityTemplate Create_Ability()
 	Template.bSkipFireAction = false;
 	Template.OverrideAbilityAvailabilityFn = Parry_OverrideAbilityAvailability;
 
+	//DEBUG ONLY: uncomment later.
 	//Template.OverrideAbilities.AddItem('ParryActivate');
 	//Template.OverrideAbilities.AddItem('Parry');
 
@@ -101,6 +102,8 @@ simulated function OnShieldRemoved_BuildVisualization(XComGameState VisualizeGam
 		{
 			PlayAnimation = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded));
 			PlayAnimation.Params.AnimName = 'HL_RemoveTemplarShield';
+
+			// TODO: Shield AnimSet needs to be removed from the unit after the remove animation has played.
 		}
 	}
 }
