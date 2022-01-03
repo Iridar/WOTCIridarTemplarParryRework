@@ -1,5 +1,39 @@
-class X2Effect_TemplarShield extends X2Effect_Persistent;
+class X2Effect_TemplarShield extends X2Effect_EnergyShield;
 
+// The original Energy Shield effect is removed immediately when the unit's Shield HP is depleted. 
+// We delay the removal until the game state with the attack is submitted so that other Event Listeners can check for the effect's presence properly.
+/*
+function RegisterForEvents(XComGameState_Effect EffectGameState)
+{
+	local X2EventManager EventMgr;
+	local XComGameState_Unit UnitState;
+	local Object EffectObj;
+
+	EventMgr = `XEVENTMGR;
+
+	UnitState = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(EffectGameState.ApplyEffectParameters.TargetStateObjectRef.ObjectID));
+	EffectObj = EffectGameState;
+
+	EventMgr.RegisterForEvent(EffectObj, 'ShieldsExpended', OnShieldsExpended, ELD_OnStateSubmitted, , UnitState);
+}
+
+private function EventListenerReturn OnShieldsExpended(Object EventData, Object EventSource, XComGameState GameState, Name Event, Object CallbackData)
+{
+	local XComGameStateContext_EffectRemoved RemoveContext;
+	local XComGameState NewGameState;
+	
+	if (!bRemoved)
+	{
+		RemoveContext = class'XComGameStateContext_EffectRemoved'.static.CreateEffectRemovedContext(self);
+		NewGameState = `XCOMHISTORY.CreateNewGameState(true, RemoveContext);
+		RemoveEffect(NewGameState, GameState);
+		RemoveContext.BuildVisualizationDelegate = 
+		SubmitNewGameState(NewGameState);
+	}
+
+	return ELR_NoInterrupt;
+}
+*/
 /*
 var name EffectAppliedAnimName;
 var name EffectRemovedAnimName;

@@ -53,7 +53,7 @@ static private function EventListenerReturn OnOverrideHitEffects(Object EventDat
 	TargetUnit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(Pawn.ObjectID));
 	`LOG(GetFuncName() @ TargetUnit.GetFullName() @ TargetUnit.ObjectID,, 'IRITEST');
 
-	if (TargetUnit != none && TargetUnit.IsUnitAffectedByEffectName('IRI_PsionicShield_Effect')) // TODO: This check fails if the effect was removed by the attack
+	if (TargetUnit != none && TargetUnit.IsUnitAffectedByEffectName(class'X2TemplarShield'.default.ShieldEffectName)) // TODO: This check fails if the effect was removed by the attack
 	{
 		`LOG(GetFuncName() @ "overriding hit effect hit result",, 'IRITEST');
 		Tuple.Data[0].b = false;
@@ -80,7 +80,7 @@ static private function EventListenerReturn OnOverrideMetaHitEffect(Object Event
 	TargetUnit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(Pawn.ObjectID));
 	`LOG(GetFuncName() @ TargetUnit.GetFullName() @ TargetUnit.ObjectID @ "HP:" @ TargetUnit.GetCurrentStat(eStat_HP) @ "Shield HP:" @ TargetUnit.GetCurrentStat(eStat_ShieldHP),, 'IRITEST');
 
-	if (TargetUnit != none && TargetUnit.IsUnitAffectedByEffectName('IRI_PsionicShield_Effect')) // TODO: This check fails if the effect was removed by the attack
+	if (TargetUnit != none && TargetUnit.IsUnitAffectedByEffectName(class'X2TemplarShield'.default.ShieldEffectName)) // TODO: This check fails if the effect was removed by the attack
 	{
 		`LOG(GetFuncName() @ "overriding hit effect hit result",, 'IRITEST');
 		Tuple.Data[0].b = false;		// Setting to *not* override the Hit Effect, so it can play as we want. 
@@ -113,7 +113,7 @@ static private function EventListenerReturn OnAbilityActivated(Object EventData,
 	History = `XCOMHISTORY;
 
 	TargetUnit = XComGameState_Unit(History.GetGameStateForObjectID(AbilityContext.InputContext.PrimaryTarget.ObjectID));
-	if (TargetUnit != none && TargetUnit.IsUnitAffectedByEffectName('IRI_PsionicShield_Effect'))
+	if (TargetUnit != none && TargetUnit.IsUnitAffectedByEffectName(class'X2TemplarShield'.default.ShieldEffectName))
 	{
 		if (AbilityContext.PostBuildVisualizationFn.Find(ReplaceHitAnimation_PostBuildVis) == INDEX_NONE)
 		{
@@ -125,7 +125,7 @@ static private function EventListenerReturn OnAbilityActivated(Object EventData,
 		foreach AbilityContext.InputContext.MultiTargets(UnitRef)
 		{
 			TargetUnit = XComGameState_Unit(History.GetGameStateForObjectID(UnitRef.ObjectID));
-			if (TargetUnit != none && TargetUnit.IsUnitAffectedByEffectName('IRI_PsionicShield_Effect'))
+			if (TargetUnit != none && TargetUnit.IsUnitAffectedByEffectName(class'X2TemplarShield'.default.ShieldEffectName))
 			{
 				if (AbilityContext.PostBuildVisualizationFn.Find(ReplaceHitAnimation_PostBuildVis) == INDEX_NONE)
 				{
@@ -156,8 +156,9 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 	local X2Action											ParentAction;
 	local X2Action											ParentParentAction;
 	local array<X2Action>									ParentActions;
-	local X2Action_PlayAnimation							ConsumeShieldAnim;
+	local X2Action_PlayAnimation							PlayAnimation;
 	local name												InputEvent;
+	local X2Action_MarkerTreeInsertEnd						MarkerEnd;
 
 	AbilityContext = XComGameStateContext_Ability(VisualizeGameState.GetContext());
 	if (AbilityContext == none)
@@ -171,7 +172,7 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 	{
 		ActionMetadata = FindAction.Metadata;
 		OldUnitState = XComGameState_Unit(FindAction.Metadata.StateObject_OldState);
-		if (OldUnitState == none || !OldUnitState.IsUnitAffectedByEffectName('IRI_PsionicShield_Effect')) // TODO: This may need to be adjusted
+		if (OldUnitState == none || !OldUnitState.IsUnitAffectedByEffectName(class'X2TemplarShield'.default.ShieldEffectName)) // TODO: This may need to be adjusted
 			continue;
 
 		// TODO: This may need to be adjusted depending on if grazes count as hit or miss
@@ -206,7 +207,7 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 		CopyActionProperties(AdditionalAction, DamageAction);
 		AdditionalAction.bShowFlyovers = false;
 
-		// Make child actions of the original Damage Unit action become children of the replacement action.
+		// Make child actions of the original Damage Unit action become children of the additional action.
 		foreach DamageAction.ChildActions(ChildAction)
 		{
 			VisMgr.ConnectAction(ChildAction, VisMgr.BuildVisTree, false, AdditionalAction);
@@ -238,18 +239,28 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 			EmptyAction = X2Action_MarkerNamed(class'X2Action'.static.CreateVisualizationActionClass(class'X2Action_MarkerNamed', DamageAction.StateChangeContext));
 			EmptyAction.SetName("ReplaceDamageUnitAction");
 			VisMgr.ReplaceNode(EmptyAction, DamageAction);
+
+			// If the unit took just enough damage to deplete the shield, but not injure the unit, then play the "shield dissolve" animation right away.
+			MarkerEnd = X2Action_MarkerTreeInsertEnd(VisMgr.GetNodeOfType(VisMgr.BuildVisTree, class'X2Action_MarkerTreeInsertEnd'));
+			if (MarkerEnd != none && class'X2TemplarShield'.static.WasShieldFullyConsumed(OldUnitState, NewUnitState))
+			{	
+				PlayAnimation = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, MarkerEnd.ParentActions));
+				PlayAnimation.Params.AnimName = 'HL_RemoveTemplarShield';
+
+				VisMgr.ConnectAction(MarkerEnd, VisMgr.BuildVisTree, false, PlayAnimation);
+			}
 		}
 		else
 		{
 			// If shield was fully depleted by the attack, play an additive animation with particle effects of the shield blowing up at the same time as the unit being hit.
-			ConsumeShieldAnim = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, ParentActions));
-			ConsumeShieldAnim.Params.AnimName = 'ADD_DestroyShield';
-			ConsumeShieldAnim.Params.Additive = true;
+			PlayAnimation = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, ParentActions));
+			PlayAnimation.Params.AnimName = 'ADD_DestroyShield';
+			PlayAnimation.Params.Additive = true;
 
-			ConsumeShieldAnim.ClearInputEvents();
+			PlayAnimation.ClearInputEvents();
 			foreach DamageAction.InputEventIDs(InputEvent)
 			{
-				ConsumeShieldAnim.AddInputEvent(InputEvent);
+				PlayAnimation.AddInputEvent(InputEvent);
 			}
 		}
 	}
