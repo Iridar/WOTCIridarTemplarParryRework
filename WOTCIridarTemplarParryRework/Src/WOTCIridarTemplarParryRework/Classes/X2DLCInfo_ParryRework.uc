@@ -18,7 +18,15 @@ Well, I guess instead of ablative, it can display the amount of damage the templ
 4. Templar will now play custom "get hit" animations when attacked by enemies. 
 5. When the effect ends, either by being removed by an attack or due to next turn beginning, the shield effect disappears
 6. UpdateAnimations sees the Templar is no longer affected by the effect, and will not apply ballistic shield animations.
+
+Issues with Preview #7:
+1. When the shield effect ends naturally, the Ballistic Shield idle is remoevd from the soldier before the Fold Shield animation plays, creating slightly jerky movement.
+2. Templar doesn't always face the attacker. (for area attacks, make the unit turn towards target location)
+3. "HL Hurt" animations interrupt Absorb cinescript, hiding the shield explosion animation.
+4. When it doesn't interrupt the animation, cinecamera holds for too long, showing the unit still has AnimSets applied and plays "with shield" idle.
+5. Some Fire Actions take so long that "Absorb and Fold" animation folds the shield before the attack has gone through. (Suggested fix: separate in two animation actions back to back)
 */
+
 
 /// <summary>
 /// This method is run if the player loads a saved game that was created prior to this DLC / Mod being installed, and allows the 
