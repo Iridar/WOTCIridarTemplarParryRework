@@ -4,18 +4,15 @@ class X2Action_ApplyWeaponDamageToUnit_TemplarShield extends X2Action_ApplyWeapo
 // OR: Skip playing any animation at all if set up so.
 
 var bool bSkipAnimation;
+var name CustomAnimName;
 
 simulated function Name ComputeAnimationToPlay(const string AppendEffectString="")
 {	
-	local name AnimName;
+	//local name AnimName;
+	//AnimName = super.ComputeAnimationToPlay(AppendEffectString);
+	//`LOG("Computed AnimName:" @ AnimName,, 'IRITEST');
 
-	AnimName = super.ComputeAnimationToPlay(AppendEffectString);
-
-	`LOG("Computed AnimName:" @ AnimName,, 'IRITEST');
-
-	return 'HL_Deflect_Full';
-
-	//return AnimName;
+	return CustomAnimName;
 }
 
 simulated function bool ShouldPlayAnimation()

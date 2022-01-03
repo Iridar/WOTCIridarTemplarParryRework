@@ -42,7 +42,7 @@ static function X2AbilityTemplate Create_Ability()
 
 	// Effects
 	AnimSetEffect = new class'X2Effect_TemplarShieldAnimations';
-	AnimSetEffect.BuildPersistentEffect(1, false, false,, eGameRule_PlayerTurnBegin);
+	AnimSetEffect.BuildPersistentEffect(1, false, true,, eGameRule_PlayerTurnBegin);
 	AnimSetEffect.AddAnimSetWithPath("WoTC_Shield_Animations.Anims.AS_Shield");
 	AnimSetEffect.AddAnimSetWithPath("IRIParryReworkAnims.Anims.AS_TemplarShield"); // Flinch replaced with CS animations, Ballistic Shields' Hurt replaced by original templar animations.
 	Template.AddTargetEffect(AnimSetEffect);
@@ -50,7 +50,7 @@ static function X2AbilityTemplate Create_Ability()
 	ShieldedEffect = new class'X2Effect_EnergyShield';
 	ShieldedEffect.BuildPersistentEffect(1, false, true,, eGameRule_PlayerTurnBegin);
 	ShieldedEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyHelpText(), Template.IconImage, true, , Template.AbilitySourceName);
-	ShieldedEffect.AddPersistentStatChange(eStat_ShieldHP, 4);
+	ShieldedEffect.AddPersistentStatChange(eStat_ShieldHP, 5);
 	ShieldedEffect.EffectName = class'X2TemplarShield'.default.ShieldEffectName;
 	ShieldedEffect.EffectRemovedVisualizationFn = OnShieldRemoved_BuildVisualization;
 	//ShieldedEffect.EffectRemovedFn = OnShieldEffectRemoved;
@@ -64,8 +64,8 @@ static function X2AbilityTemplate Create_Ability()
 	Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
 	Template.BuildInterruptGameStateFn = TypicalAbility_BuildInterruptGameState;
 	Template.bShowActivation = false; // Don't show flyover, it obscures the fancy animation.
-	Template.CustomSelfFireAnim = 'HL_TemplarShield';
-	Template.CustomFireAnim = 'HL_TemplarShield';
+	Template.CustomSelfFireAnim = 'HL_Shield_Extend';
+	Template.CustomFireAnim = 'HL_Shield_Extend';
 	Template.bSkipExitCoverWhenFiring = true;
 	Template.bSkipFireAction = false;
 	Template.OverrideAbilityAvailabilityFn = Parry_OverrideAbilityAvailability;
@@ -104,10 +104,13 @@ private function OnShieldRemoved_BuildVisualization(XComGameState VisualizeGameS
 		//SoundAndFlyOver = X2Action_PlaySoundAndFlyOver(class'X2Action_PlaySoundAndFlyOver'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded));
 		//SoundAndFlyOver.SetSoundAndFlyOverParameters(None, class'XLocalizedData'.default.ShieldRemovedMsg, '', eColor_Bad, , 0.75, true);
 		UnitPawn = Unit.GetPawn();
-		if (UnitPawn != none && UnitPawn.GetAnimTreeController().CanPlayAnimation('HL_RemoveTemplarShield'))
+		if (UnitPawn != none && UnitPawn.GetAnimTreeController().CanPlayAnimation('HL_Shield_Fold'))
 		{
+			// TODO: AnimSet gets removed before this animation plays, creating jerky movement
+
 			PlayAnimation = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded));
-			PlayAnimation.Params.AnimName = 'HL_RemoveTemplarShield';
+			PlayAnimation.Params.AnimName = 'HL_Shield_Fold';
+			PlayAnimation.Params.BlendTime = 0.3f;
 		}
 	}
 }

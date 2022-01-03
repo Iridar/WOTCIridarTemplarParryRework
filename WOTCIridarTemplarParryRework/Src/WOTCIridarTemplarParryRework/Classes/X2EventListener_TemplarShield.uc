@@ -172,13 +172,13 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 	{
 		ActionMetadata = FindAction.Metadata;
 		OldUnitState = XComGameState_Unit(FindAction.Metadata.StateObject_OldState);
-		if (OldUnitState == none || !OldUnitState.IsUnitAffectedByEffectName(class'X2TemplarShield'.default.ShieldEffectName)) // TODO: This may need to be adjusted
+		NewUnitState = XComGameState_Unit(ActionMetadata.StateObject_NewState);
+		if (OldUnitState == none || NewUnitState == none || !OldUnitState.IsUnitAffectedByEffectName(class'X2TemplarShield'.default.ShieldEffectName)) // TODO: This may need to be adjusted
 			continue;
 
 		// TODO: This may need to be adjusted depending on if grazes count as hit or miss
 		`LOG("Graze is hit :" @ AbilityContext.IsHitResultHit(eHit_Graze),, 'IRITEST'); // true
 		`LOG("Graze is miss:" @ AbilityContext.IsHitResultMiss(eHit_Graze),, 'IRITEST');// false
-		
 		// We don't care about misses
 		if (!WasUnitHit(AbilityContext, OldUnitState.ObjectID))
 			continue;		
@@ -206,6 +206,7 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 		AdditionalAction = X2Action_ApplyWeaponDamageToUnit_TemplarShield(class'X2Action_ApplyWeaponDamageToUnit_TemplarShield'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, ParentActions));
 		CopyActionProperties(AdditionalAction, DamageAction);
 		AdditionalAction.bShowFlyovers = false;
+		AdditionalAction.CustomAnimName = 'HL_Shield_Absorb';
 
 		// Make child actions of the original Damage Unit action become children of the additional action.
 		foreach DamageAction.ChildActions(ChildAction)
@@ -215,10 +216,6 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 
 		// #2. Replace the original Damage Unit action that would have played "unit hit" animation,
 		// but only if the shield fully absorbed all damage.
-		NewUnitState = XComGameState_Unit(ActionMetadata.StateObject_NewState);
-		if (NewUnitState == none)
-			continue;
-
 		ParentActions = DamageAction.ParentActions;
 
 		if (class'X2TemplarShield'.static.WasUnitFullyProtected(OldUnitState, NewUnitState))
@@ -241,20 +238,22 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 			VisMgr.ReplaceNode(EmptyAction, DamageAction);
 
 			// If the unit took just enough damage to deplete the shield, but not injure the unit, then play the "shield dissolve" animation right away.
-			MarkerEnd = X2Action_MarkerTreeInsertEnd(VisMgr.GetNodeOfType(VisMgr.BuildVisTree, class'X2Action_MarkerTreeInsertEnd'));
-			if (MarkerEnd != none && class'X2TemplarShield'.static.WasShieldFullyConsumed(OldUnitState, NewUnitState))
-			{	
-				PlayAnimation = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, MarkerEnd.ParentActions));
-				PlayAnimation.Params.AnimName = 'HL_RemoveTemplarShield';
+			//MarkerEnd = X2Action_MarkerTreeInsertEnd(VisMgr.GetNodeOfType(VisMgr.BuildVisTree, class'X2Action_MarkerTreeInsertEnd'));
 
-				VisMgr.ConnectAction(MarkerEnd, VisMgr.BuildVisTree, false, PlayAnimation);
+			if (/*MarkerEnd != none && */class'X2TemplarShield'.static.WasShieldFullyConsumed(OldUnitState, NewUnitState))
+			{	
+				//PlayAnimation = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, MarkerEnd.ParentActions));
+				//PlayAnimation.Params.AnimName = 'HL_Shield_Fold';
+				//VisMgr.ConnectAction(MarkerEnd, VisMgr.BuildVisTree, false, PlayAnimation);
+
+				AdditionalAction.CustomAnimName = 'HL_Shield_AbsorbAndFold';
 			}
 		}
 		else
 		{
 			// If shield was fully depleted by the attack, play an additive animation with particle effects of the shield blowing up at the same time as the unit being hit.
 			PlayAnimation = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, ParentActions));
-			PlayAnimation.Params.AnimName = 'ADD_DestroyShield';
+			PlayAnimation.Params.AnimName = 'ADD_Shield_Explode';
 			PlayAnimation.Params.Additive = true;
 
 			PlayAnimation.ClearInputEvents();
