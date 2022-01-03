@@ -220,7 +220,7 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 
 		ParentActions = DamageAction.ParentActions;
 
-		if (WasUnitFullyProtected(OldUnitState, NewUnitState))
+		if (class'X2TemplarShield'.static.WasUnitFullyProtected(OldUnitState, NewUnitState))
 		{
 			// Since we now have a separate action for playing the "unit gets hit" animation, 
 			// we replace the original Damage Unit action with a custom version that can be set to skip playing any animations.
@@ -239,8 +239,7 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 			EmptyAction.SetName("ReplaceDamageUnitAction");
 			VisMgr.ReplaceNode(EmptyAction, DamageAction);
 		}
-		
-		if (WasShieldFullyConsumed(OldUnitState, NewUnitState))
+		else
 		{
 			// If shield was fully depleted by the attack, play an additive animation with particle effects of the shield blowing up at the same time as the unit being hit.
 			ConsumeShieldAnim = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, ParentActions));
@@ -326,14 +325,4 @@ private static function CopyActionProperties(out X2Action_ApplyWeaponDamageToUni
 	ReplaceAction.bCombineFlyovers = DamageAction.bCombineFlyovers;
 	ReplaceAction.EffectHitEffectsOverride = DamageAction.EffectHitEffectsOverride;
 	ReplaceAction.CounterattackedAction = DamageAction.CounterattackedAction;
-}
-
-static final function bool WasUnitFullyProtected(const XComGameState_Unit OldUnitState, const XComGameState_Unit NewUnitState)
-{
-	return NewUnitState.GetCurrentStat(eStat_HP) >= OldUnitState.GetCurrentStat(eStat_HP);
-}
-
-static final function bool WasShieldFullyConsumed(const XComGameState_Unit OldUnitState, const XComGameState_Unit NewUnitState)
-{
-	return NewUnitState.GetCurrentStat(eStat_ShieldHP) <= 0;
 }

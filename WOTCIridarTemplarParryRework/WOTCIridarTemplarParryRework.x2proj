@@ -62,6 +62,9 @@
     <Content Include="Src\WOTCIridarTemplarParryRework\Classes\X2EventListener_TemplarShield.uc">
       <SubType>Content</SubType>
     </Content>
+    <Content Include="Src\WOTCIridarTemplarParryRework\Classes\X2TemplarShield.uc">
+      <SubType>Content</SubType>
+    </Content>
   </ItemGroup>
   <PropertyGroup>
     <SolutionRoot>$(MSBuildProjectDirectory)\..\</SolutionRoot>

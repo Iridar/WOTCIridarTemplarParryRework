@@ -41,19 +41,20 @@ static function X2AbilityTemplate Create_Ability()
 	Template.AbilityCosts.AddItem(ActionPointCost);
 
 	// Effects
+	ShieldedEffect = new class'X2Effect_EnergyShield';
+	ShieldedEffect.BuildPersistentEffect(1, false, true,, eGameRule_PlayerTurnBegin);
+	ShieldedEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyHelpText(), Template.IconImage, true, , Template.AbilitySourceName);
+	ShieldedEffect.AddPersistentStatChange(eStat_ShieldHP, 4);
+	ShieldedEffect.EffectName = 'IRI_PsionicShield_Effect';
+	ShieldedEffect.EffectRemovedVisualizationFn = OnShieldRemoved_BuildVisualization;
+	Template.AddTargetEffect(ShieldedEffect);
+
+	// Apply AnimSet effect *after* the shield effect, so that AnimSets are removed from the unit *after* the "shield remove" animation has played.
 	AnimSetEffect = new class'X2Effect_TemplarShieldAnimations';
 	AnimSetEffect.BuildPersistentEffect(1, false, false,, eGameRule_PlayerTurnBegin);
 	AnimSetEffect.AddAnimSetWithPath("WoTC_Shield_Animations.Anims.AS_Shield");
 	AnimSetEffect.AddAnimSetWithPath("IRIParryReworkAnims.Anims.AS_TemplarShield"); // Flinch and Death replacement
 	Template.AddTargetEffect(AnimSetEffect);
-
-	ShieldedEffect = new class'X2Effect_EnergyShield';
-	ShieldedEffect.BuildPersistentEffect(1, false, true,, eGameRule_PlayerTurnBegin);
-	ShieldedEffect.SetDisplayInfo(ePerkBuff_Bonus, Template.LocFriendlyName, Template.GetMyHelpText(), Template.IconImage, true, , Template.AbilitySourceName);
-	ShieldedEffect.AddPersistentStatChange(eStat_ShieldHP, 5);
-	ShieldedEffect.EffectName = 'IRI_PsionicShield_Effect';
-	ShieldedEffect.EffectRemovedVisualizationFn = OnShieldRemoved_BuildVisualization;
-	Template.AddTargetEffect(ShieldedEffect);
 
 	// State and Viz
 	Template.Hostility = eHostility_Defensive;
@@ -62,7 +63,7 @@ static function X2AbilityTemplate Create_Ability()
 	Template.BuildNewGameStateFn = TypicalAbility_BuildGameState;
 	Template.BuildVisualizationFn = TypicalAbility_BuildVisualization;
 	Template.BuildInterruptGameStateFn = TypicalAbility_BuildInterruptGameState;
-	Template.bShowActivation = true;
+	Template.bShowActivation = false; // Don't show flyover as it obscures the fancy animation
 	Template.CustomSelfFireAnim = 'HL_TemplarShield';
 	Template.CustomFireAnim = 'HL_TemplarShield';
 	Template.bSkipExitCoverWhenFiring = true;
@@ -87,16 +88,28 @@ private static function Parry_OverrideAbilityAvailability(out AvailableAction Ac
 
 simulated function OnShieldRemoved_BuildVisualization(XComGameState VisualizeGameState, out VisualizationActionMetadata ActionMetadata, const name EffectApplyResult)
 {
-	local X2Action_PlaySoundAndFlyOver	SoundAndFlyOver;
+	//local X2Action_PlaySoundAndFlyOver	SoundAndFlyOver;
 	local X2Action_PlayAnimation		PlayAnimation;
 	local XGUnit						Unit;
 	local XComUnitPawn					UnitPawn;
+	local XComGameState_Unit			OldUnitState;
+	local XComGameState_Unit			NewUnitState;
 
 	Unit = XGUnit(ActionMetadata.VisualizeActor);
 	if (Unit != none && Unit.IsAlive())
 	{
-		SoundAndFlyOver = X2Action_PlaySoundAndFlyOver(class'X2Action_PlaySoundAndFlyOver'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded));
-		SoundAndFlyOver.SetSoundAndFlyOverParameters(None, class'XLocalizedData'.default.ShieldRemovedMsg, '', eColor_Bad, , 0.75, true);
+		//SoundAndFlyOver = X2Action_PlaySoundAndFlyOver(class'X2Action_PlaySoundAndFlyOver'.static.AddToVisualizationTree(ActionMetadata, VisualizeGameState.GetContext(), false, ActionMetadata.LastActionAdded));
+		//SoundAndFlyOver.SetSoundAndFlyOverParameters(None, class'XLocalizedData'.default.ShieldRemovedMsg, '', eColor_Bad, , 0.75, true);
+
+		OldUnitState = XComGameState_Unit(ActionMetadata.StateObject_OldState);
+		NewUnitState = XComGameState_Unit(ActionMetadata.StateObject_NewState);
+
+		// If the unit was not fully protected, meaning the attack broke through the shield and the unit took damage,
+		// then the Post Build Vis function inserted in the Event Listener would have already played the shield dissolve animation,
+		// so we don't have to do anything.
+		// TODO: This check doesn't work
+		if (OldUnitState == none || NewUnitState == none || !class'X2TemplarShield'.static.WasUnitFullyProtected(OldUnitState, NewUnitState))
+			return;		
 
 		UnitPawn = Unit.GetPawn();
 		if (UnitPawn != none && UnitPawn.GetAnimTreeController().CanPlayAnimation('HL_RemoveTemplarShield'))
@@ -108,7 +121,6 @@ simulated function OnShieldRemoved_BuildVisualization(XComGameState VisualizeGam
 		}
 	}
 }
-
 
 //	========================================
 //				COMMON CODE
