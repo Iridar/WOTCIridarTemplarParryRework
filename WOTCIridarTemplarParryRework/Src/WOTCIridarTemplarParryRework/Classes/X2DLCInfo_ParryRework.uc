@@ -7,7 +7,7 @@ class X2DLCInfo_ParryRework extends X2DownloadableContentInfo;
 - The normal hit taken, where the shield holds
 - The "shield shatter" animation where the overall damage taken reaches equal to the deployed shield, causing the shots to destroy the shield
 - A variant of the shield shatter anim where the overall damage is greater so the shot not only destroys the shield but also damages the templar
-- // TODO: Handle death action too
+
 And the undeploy animation that happens when the shield effect expires
 Well, I guess instead of ablative, it can display the amount of damage the templar can take before the shield is destroyed (just like amplify displays its ticks) so it feels more unique and doesn't tread on shield hp 
 
@@ -19,12 +19,17 @@ Well, I guess instead of ablative, it can display the amount of damage the templ
 5. When the effect ends, either by being removed by an attack or due to next turn beginning, the shield effect disappears
 6. UpdateAnimations sees the Templar is no longer affected by the effect, and will not apply ballistic shield animations.
 
-Issues with Preview #7:
+# Issues with Preview #7:
 1. When the shield effect ends naturally, the Ballistic Shield idle is remoevd from the soldier before the Fold Shield animation plays, creating slightly jerky movement.
-2. Templar doesn't always face the attacker. (for area attacks, make the unit turn towards target location)
-3. "HL Hurt" animations interrupt Absorb cinescript, hiding the shield explosion animation.
 4. When it doesn't interrupt the animation, cinecamera holds for too long, showing the unit still has AnimSets applied and plays "with shield" idle.
 5. Some Fire Actions take so long that "Absorb and Fold" animation folds the shield before the attack has gone through. (Suggested fix: separate in two animation actions back to back)
+6. Compare dialogue to Deflect
+- // TODO: Handle death action too
+
+# Addressed
+2. Templar doesn't always face the attacker. (for area attacks, make the unit turn towards target location) - fixed.
+3. "HL Hurt" animations interrupt Absorb cinescript, hiding the shield explosion animation. -Unavoidable? There's no cinescript notify in these anims.
+7.See how Deflect works vs Grenade - starts playing Deflect animation when the grenade explodes.
 */
 
 

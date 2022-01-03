@@ -158,7 +158,11 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 	local array<X2Action>									ParentActions;
 	local X2Action_PlayAnimation							PlayAnimation;
 	local name												InputEvent;
-	local X2Action_MarkerTreeInsertEnd						MarkerEnd;
+	//local X2Action_MarkerTreeInsertEnd						MarkerEnd;
+	local X2Action_MoveTurn									MoveTurnAction;
+	local bool												bMoveTurnAdded;
+	local XComGameState_Unit								SourceUnit;
+	local XComGameState_Ability								AbilityState;
 
 	AbilityContext = XComGameStateContext_Ability(VisualizeGameState.GetContext());
 	if (AbilityContext == none)
@@ -203,7 +207,36 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 			}
 		}
 
-		AdditionalAction = X2Action_ApplyWeaponDamageToUnit_TemplarShield(class'X2Action_ApplyWeaponDamageToUnit_TemplarShield'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, ParentActions));
+		// #1A. Insert a Move Turn action to force the unit to face the attacker or epicenter of the explosion.
+		// Idle State Machine doesn't always turn the unit in time.
+		if (!bMoveTurnAdded)
+		{
+			// If the abilityi is area-targeted, like a grenade throw, then face the target location (the epicenter of the explosion)
+			if (AbilityContext.InputContext.TargetLocations.Length > 0)
+			{
+				AbilityState = XComGameState_Ability(`XCOMHISTORY.GetGameStateForObjectID(AbilityContext.InputContext.AbilityRef.ObjectID));
+				if (AbilityState != none && AbilityState.GetMyTemplate() != none && ClassIsChildOf(AbilityState.GetMyTemplate().TargetingMethod, class'X2TargetingMethod_Grenade'))
+				{
+					MoveTurnAction = X2Action_MoveTurn(class'X2Action_MoveTurn'.static.AddToVisualizationTree(ActionMetadata, AbilityContext, false,, ParentActions));
+					MoveTurnAction.m_vFacePoint = AbilityContext.InputContext.TargetLocations[0];
+					bMoveTurnAdded = true;
+				}
+			}
+
+			// Otherwise face the attacker
+			if (!bMoveTurnAdded)
+			{
+				SourceUnit = XComGameState_Unit(`XCOMHISTORY.GetGameStateForObjectID(AbilityContext.InputContext.SourceObject.ObjectID));
+				if (SourceUnit != none)
+				{
+					MoveTurnAction = X2Action_MoveTurn(class'X2Action_MoveTurn'.static.AddToVisualizationTree(ActionMetadata, AbilityContext, false,, ParentActions));
+					MoveTurnAction.m_vFacePoint = `XWORLD.GetPositionFromTileCoordinates(SourceUnit.TileLocation);
+					bMoveTurnAdded = true;
+				}
+			}
+		}
+
+		AdditionalAction = X2Action_ApplyWeaponDamageToUnit_TemplarShield(class'X2Action_ApplyWeaponDamageToUnit_TemplarShield'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,, MoveTurnAction, ParentActions));
 		CopyActionProperties(AdditionalAction, DamageAction);
 		AdditionalAction.bShowFlyovers = false;
 		AdditionalAction.CustomAnimName = 'HL_Shield_Absorb';
