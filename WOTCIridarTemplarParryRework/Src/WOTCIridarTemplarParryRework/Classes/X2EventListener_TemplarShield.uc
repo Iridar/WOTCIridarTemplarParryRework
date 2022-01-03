@@ -141,12 +141,12 @@ static private function EventListenerReturn OnAbilityActivated(Object EventData,
 
 static private function ReplaceHitAnimation_PostBuildVis(XComGameState VisualizeGameState)
 {
-	local XComGameStateContext_Ability	AbilityContext;
-	local XComGameStateVisualizationMgr	VisMgr;
-	local array<X2Action>				FindActions;
-	local X2Action						FindAction;
-	local X2Action						ChildAction;
-	local VisualizationActionMetadata	ActionMetadata;
+	local XComGameStateContext_Ability						AbilityContext;
+	local XComGameStateVisualizationMgr						VisMgr;
+	local array<X2Action>									FindActions;
+	local X2Action											FindAction;
+	local X2Action											ChildAction;
+	local VisualizationActionMetadata						ActionMetadata;
 	local XComGameState_Unit								OldUnitState;
 	local XComGameState_Unit								NewUnitState;
 	local X2Action_ApplyWeaponDamageToUnit					DamageAction;
@@ -157,6 +157,7 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 	local X2Action											ParentParentAction;
 	local array<X2Action>									ParentActions;
 	local X2Action_PlayAnimation							ConsumeShieldAnim;
+	local name												InputEvent;
 
 	AbilityContext = XComGameStateContext_Ability(VisualizeGameState.GetContext());
 	if (AbilityContext == none)
@@ -217,12 +218,14 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 		if (NewUnitState == none)
 			continue;
 
+		ParentActions = DamageAction.ParentActions;
+
 		if (WasUnitFullyProtected(OldUnitState, NewUnitState))
 		{
 			// Since we now have a separate action for playing the "unit gets hit" animation, 
 			// we replace the original Damage Unit action with a custom version that can be set to skip playing any animations.
 			// We keep it in the tree so we still have a Damage Unit action as a child of the Fire Action so it can show the damage flyover when the unit gets hit.
-			ReplaceAction = X2Action_ApplyWeaponDamageToUnit_TemplarShield(class'X2Action_ApplyWeaponDamageToUnit_TemplarShield'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, DamageAction.ParentActions));
+			ReplaceAction = X2Action_ApplyWeaponDamageToUnit_TemplarShield(class'X2Action_ApplyWeaponDamageToUnit_TemplarShield'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, ParentActions));
 			CopyActionProperties(ReplaceAction, DamageAction);
 			ReplaceAction.bSkipAnimation = true;
 
@@ -240,12 +243,16 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 		if (WasShieldFullyConsumed(OldUnitState, NewUnitState))
 		{
 			// If shield was fully depleted by the attack, play an additive animation with particle effects of the shield blowing up at the same time as the unit being hit.
-			ConsumeShieldAnim = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, DamageAction.ParentActions));
-			ConsumeShieldAnim.InputEventIDs = DamageAction.InputEventIDs;
+			ConsumeShieldAnim = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, ParentActions));
 			ConsumeShieldAnim.Params.AnimName = 'ADD_DestroyShield';
 			ConsumeShieldAnim.Params.Additive = true;
+
+			ConsumeShieldAnim.ClearInputEvents();
+			foreach DamageAction.InputEventIDs(InputEvent)
+			{
+				ConsumeShieldAnim.AddInputEvent(InputEvent);
+			}
 		}
-		
 	}
 }
 
