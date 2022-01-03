@@ -284,6 +284,10 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 		}
 		else
 		{
+			// Insert Update Animations between playing the "Unit hurt" animation and eveerything that follows so that after playing that animation the unit no longer uses ballistic shield idle animations.
+			// EDIT: Appears to do nothing
+			//class'X2Action_UpdateAnimations'.static.AddToVisualizationTree(ActionMetadata, AbilityContext, true, DamageAction);		
+
 			// If shield was fully depleted by the attack, play an additive animation with particle effects of the shield blowing up at the same time as the unit being hit.
 			PlayAnimation = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, ParentActions));
 			PlayAnimation.Params.AnimName = 'ADD_Shield_Explode';
@@ -293,7 +297,7 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 			foreach DamageAction.InputEventIDs(InputEvent)
 			{
 				PlayAnimation.AddInputEvent(InputEvent);
-			}
+			}		
 		}
 	}
 }
