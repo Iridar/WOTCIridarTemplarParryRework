@@ -23,10 +23,10 @@ Well, I guess instead of ablative, it can display the amount of damage the templ
 1. When the shield effect ends naturally, the Ballistic Shield idle is remoevd from the soldier before the Fold Shield animation plays, creating slightly jerky movement.
 4. When it doesn't interrupt the animation, cinecamera holds for too long, showing the unit still has AnimSets applied and plays "with shield" idle.
 5. Some Fire Actions take so long that "Absorb and Fold" animation folds the shield before the attack has gone through. (Suggested fix: separate in two animation actions back to back)
-
 - // TODO: Handle death action too
 
 # Addressed
+When the attack fully depletes the shield but doesn't wound the soldier, the blood effect still appears. - Fixed by using viz code in viz code. Briliant.
 6. Compare dialogue to Deflect - deflect uses "I was missed", while shield says "I was wounded"
 2. Templar doesn't always face the attacker. (for area attacks, make the unit turn towards target location) - fixed.
 3. "HL Hurt" animations interrupt Absorb cinescript, hiding the shield explosion animation. -Unavoidable? There's no cinescript notify in these anims.
