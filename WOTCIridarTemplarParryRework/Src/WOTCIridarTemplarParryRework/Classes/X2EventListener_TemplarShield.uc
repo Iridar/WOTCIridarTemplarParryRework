@@ -173,6 +173,7 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 	local bool												bAreaTargetedAbility;
 	local X2Action_WaitForAnotherAction						WaitForAction;
 	local array<X2Action>									WaitForActions;
+	local array<X2Action>									DamageUnitActions;
 
 	AbilityContext = XComGameStateContext_Ability(VisualizeGameState.GetContext());
 	if (AbilityContext == none)
@@ -198,6 +199,8 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 	}
 	
 	// Cycle through all Damage Unit actions created by the ability. If the ability affected multiple units, all of them will be covered this way.
+	// This is a bit noodly. Rather than cycling through units present in this game state, or getting them from the game state by their ObjectID recorded in Context,
+	// we iterate over Damage Unit actions directly, since ultimately this is what we need to interact with.
 	VisMgr = `XCOMVISUALIZATIONMGR;
 	VisMgr.GetNodesOfType(VisMgr.BuildVisTree, class'X2Action_ApplyWeaponDamageToUnit', FindActions);
 	foreach FindActions(FindAction)
@@ -214,9 +217,12 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 
 		if (!OldUnitState.IsUnitAffectedByEffectName(class'X2TemplarShield'.default.ShieldEffectName)) // Check the old unit state specifically, as the attack could have removed the effect from the target.
 			continue;
-		
+
 		// Gather various action arrays we will need.
 		DamageAction = X2Action_ApplyWeaponDamageToUnit(FindAction);
+
+		// We might need all Damage Unit actions relevant to this unit later.
+		VisMgr.GetNodesOfType(VisMgr.BuildVisTree, class'X2Action_ApplyWeaponDamageToUnit', DamageUnitActions,, OldUnitState.ObjectID);
 
 		// Parents of the Damage Unit action are Fire Actions.
 		FireActions = DamageAction.ParentActions;
@@ -308,26 +314,30 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 			`LOG("Unit was not hit by this damage action:" @ !WasUnitHit(AbilityContext, OldUnitState.ObjectID) @ ", skipping to the next one.",, 'IRITEST');
 			continue;
 		}
-		// #3. START. Replace the original Damage Unit action that would have played "unit hit" animation, but only if the shield fully absorbed all damage.
-		// When this happens we don't want the unit to play any more "unit hit" animations, so we use a special replacement action that can do all the things the original Damage Unit action could,
-		// like showing flyover, but can be set to not play the "unit hit" animation.
+		// #3. START. 
+		// If the unit did not receive health damage during this attack (i.e. shield took all the damage), then we don't need this unit to play any "unit was hit" animations.
+		// So we replace all original Damage Unit actions for this unit with a custom version that can be configured to not play any animations, 
+		// but otherwise functions identically and can do stuff like showing flyover.
 		if (class'X2TemplarShield'.static.WasUnitFullyProtected(OldUnitState, NewUnitState))
 		{
-			`LOG("Unit was fully protected, replacing the Unit Hurt action with a new one so it can show the damage flyover",, 'IRITEST');
-			ReplaceAction = X2Action_ApplyWeaponDamageToUnit_TemplarShield(class'X2Action_ApplyWeaponDamageToUnit_TemplarShield'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, FireActions));
-			CopyActionProperties(ReplaceAction, DamageAction);
-			ReplaceAction.bSkipAnimation = true;
-
-			foreach DamageAction.ChildActions(ChildAction)
+			foreach DamageUnitActions(CycleAction)
 			{
-				VisMgr.ConnectAction(ChildAction, VisMgr.BuildVisTree, false, ReplaceAction);
-			}
+				`LOG("Unit was fully protected, replacing the Unit Hurt action with a new one so it can show the damage flyover",, 'IRITEST');
+				DamageAction = X2Action_ApplyWeaponDamageToUnit(CycleAction);
+				ReplaceAction = X2Action_ApplyWeaponDamageToUnit_TemplarShield(class'X2Action_ApplyWeaponDamageToUnit_TemplarShield'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, DamageAction.ParentActions));
+				CopyActionProperties(ReplaceAction, DamageAction);
+				ReplaceAction.bSkipAnimation = true;
 
-			// Nuke the original action out of the tree.
-			// TODO: When doing this, have to replace all damage unit actions for this unit, not just the one we happen to be cycling through.
-			EmptyAction = X2Action_MarkerNamed(class'X2Action'.static.CreateVisualizationActionClass(class'X2Action_MarkerNamed', DamageAction.StateChangeContext));
-			EmptyAction.SetName("ReplaceDamageUnitAction");
-			VisMgr.ReplaceNode(EmptyAction, DamageAction);
+				foreach DamageAction.ChildActions(ChildAction)
+				{
+					VisMgr.ConnectAction(ChildAction, VisMgr.BuildVisTree, false, ReplaceAction);
+				}
+
+				// Nuke the original action out of the tree.
+				EmptyAction = X2Action_MarkerNamed(class'X2Action'.static.CreateVisualizationActionClass(class'X2Action_MarkerNamed', DamageAction.StateChangeContext));
+				EmptyAction.SetName("ReplaceDamageUnitAction");
+				VisMgr.ReplaceNode(EmptyAction, DamageAction);
+			}
 
 			// If unit didn't take any damage, but the shield was fully depleted by the attack, then play a different "absorb damage" animation that puts the shield away at the end.
 			if (class'X2TemplarShield'.static.WasShieldFullyConsumed(OldUnitState, NewUnitState))

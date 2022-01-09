@@ -8,7 +8,7 @@ static final function bool WasUnitFullyProtected(const XComGameState_Unit OldUni
 	`LOG("Old HP:" @ OldUnitState.GetCurrentStat(eStat_HP),, 'IRITEST');
 	`LOG("New HP:" @ NewUnitState.GetCurrentStat(eStat_HP),, 'IRITEST');
 	`LOG("Unit fully protected:" @ NewUnitState.GetCurrentStat(eStat_HP) >= OldUnitState.GetCurrentStat(eStat_HP),, 'IRITEST');
-	return NewUnitState.GetCurrentStat(eStat_HP) >= OldUnitState.GetCurrentStat(eStat_HP);
+	return NewUnitState.GetCurrentStat(eStat_HP) >= OldUnitState.GetCurrentStat(eStat_HP) && !NewUnitState.IsBleedingOut();
 }
 
 static final function bool WasShieldFullyConsumed(const XComGameState_Unit OldUnitState, const XComGameState_Unit NewUnitState)
