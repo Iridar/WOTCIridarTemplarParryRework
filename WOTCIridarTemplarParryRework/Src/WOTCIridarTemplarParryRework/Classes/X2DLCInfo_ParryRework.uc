@@ -22,7 +22,6 @@ Well, I guess instead of ablative, it can display the amount of damage the templ
 # Issues with Preview #7:
 1. When the shield effect ends naturally, the Ballistic Shield idle is remoevd from the soldier before the Fold Shield animation plays, creating slightly jerky movement.
 4. When it doesn't interrupt the animation, cinecamera holds for too long, showing the unit still has AnimSets applied and plays "with shield" idle.
-5. Some Fire Actions take so long that "Absorb and Fold" animation folds the shield before the attack has gone through. (Suggested fix: separate in two animation actions back to back)
 - // TODO: Handle death action too
 
 # Addressed
@@ -31,7 +30,13 @@ When the attack fully depletes the shield but doesn't wound the soldier, the blo
 2. Templar doesn't always face the attacker. (for area attacks, make the unit turn towards target location) - fixed.
 3. "HL Hurt" animations interrupt Absorb cinescript, hiding the shield explosion animation. -Unavoidable? There's no cinescript notify in these anims.
 7.See how Deflect works vs Grenade - starts playing Deflect animation when the grenade explodes.
-Replace speech lines
+Replaced speech lines
+5. Some Fire Actions take so long that "Absorb and Fold" animation folds the shield before the attack has gone through. (Suggested fix: separate in two animation actions back to back)
+- Addressed as delaying the animation action.
+
+# Issues with Preview #8:
+- Attack that fully depleted shield HP but did not damage the unit was not recognized, the unit just played regular "shield" animation until it was interrupted by "hurt" animation. Happened only for the first time?
+- When killed by wrath cannon, the unit played "absorb and fold" animation before dying. I.e. death animation didn't interrupt the animation. Addressed already?
 */
 
 

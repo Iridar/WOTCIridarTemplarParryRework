@@ -152,7 +152,7 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 	local XComGameState_Unit								OldUnitState;
 	local XComGameState_Unit								NewUnitState;
 	local X2Action_ApplyWeaponDamageToUnit					DamageAction;
-	local X2Action_ApplyWeaponDamageToUnit_TemplarShield	AdditionalAction;
+	local X2Action_PlayAnimation							AdditionalAnimationAction;
 	local X2Action_ApplyWeaponDamageToUnit_TemplarShield	ReplaceAction;
 	local X2Action_MarkerNamed								EmptyAction;
 	local X2Action											ParentAction;
@@ -164,7 +164,6 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 	local X2Action_MoveTurn									MoveTurnAction;
 	local XComGameState_Unit								SourceUnit;
 	local XComGameState_Ability								AbilityState;
-	local X2Action_Death									DeathAction;
 	local array<int>										HandledUnits;
 	local X2AbilityTemplate									AbilityTemplate;
 	local XComGameStateHistory								History;
@@ -172,6 +171,8 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 	local X2Action_TimedWait								TimedWait;
 	local bool												bGrenadeLikeAbility;
 	local bool												bAreaTargetedAbility;
+	local X2Action_WaitForAnotherAction						WaitForAction;
+	local array<X2Action>									WaitForActions;
 
 	AbilityContext = XComGameStateContext_Ability(VisualizeGameState.GetContext());
 	if (AbilityContext == none)
@@ -207,17 +208,13 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 		if (OldUnitState == none || NewUnitState == none || HandledUnits.Find(OldUnitState.ObjectID) != INDEX_NONE)
 			continue;
 
-		`LOG(GetFuncName() @ OldUnitState.GetFullName() @ OldUnitState.GetCurrentStat(eStat_ShieldHP) @ "->" @ NewUnitState.GetCurrentStat(eStat_ShieldHP),, 'IRITEST'); // 5 -> 1
+		`LOG(GetFuncName() @ OldUnitState.GetFullName(),, 'IRITEST');
+		`LOG("HP + Shield:" @ OldUnitState.GetCurrentStat(eStat_HP) @ " + " @ OldUnitState.GetCurrentStat(eStat_ShieldHP) @ "->" @ NewUnitState.GetCurrentStat(eStat_HP) @ " + " @ NewUnitState.GetCurrentStat(eStat_ShieldHP),, 'IRITEST');
 		HandledUnits.AddItem(OldUnitState.ObjectID); // Use a tracking array to make sure each unit's visualization is adjusted only once.
 
 		if (!OldUnitState.IsUnitAffectedByEffectName(class'X2TemplarShield'.default.ShieldEffectName)) // Check the old unit state specifically, as the attack could have removed the effect from the target.
 			continue;
 		
-		// We don't care about attacks that missed.
-		// TODO: This may need to be adjusted, because grazes count as a hit.
-		if (!WasUnitHit(AbilityContext, OldUnitState.ObjectID))
-			continue;		
-
 		// Gather various action arrays we will need.
 		DamageAction = X2Action_ApplyWeaponDamageToUnit(FindAction);
 
@@ -242,8 +239,7 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 			}
 		}
 
-		// #1. START. Insert a Move Turn action to force the target unit to face the attacker or epicenter of the explosion. Idle State Machine doesn't always turn the unit in time.
-		// Put Move Turn action as child to parents of the Exit Cover action, so it will begin at the same time as the Exit Cover action.
+		// #1. START. Insert a Move Turn action to force the target unit to face the attacker or epicenter of the explosion. 
 		if (bAreaTargetedAbility) // If the ability is area-targeted, like a grenade throw, then face the target location (the epicenter of the explosion)
 		{
 			`LOG("Adding move-turn action for grenade targeted ability",, 'IRITEST');
@@ -255,62 +251,64 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 			 // So Exit Cover won't begin playing until Move Turn action finishes.
 			 // This is necessary because some Fire Actions take very little time between the Fire Action starting and damage hitting the target, 
 			 // so we have to make sure the target unit is already facing the source when the Fire Action begins.
-			`LOG("Adding move-turn action towards attacker",, 'IRITEST');
+			`LOG("Adding move-turn action towards attacker:" @ SourceUnit.GetFullName(),, 'IRITEST');
 			MoveTurnAction = X2Action_MoveTurn(class'X2Action_MoveTurn'.static.AddToVisualizationTree(ActionMetadata, AbilityContext, true,, ExitCoverParentActions));
 			MoveTurnAction.m_vFacePoint = `XWORLD.GetPositionFromTileCoordinates(SourceUnit.TileLocation);
 		}
+
+		// Keep the target unit's visualizer occupy after turning is finished and until Exit Cover begins. This is done to prevent Idle State Machine from turning the unit away.
+		WaitForActions.Length = 0;
+		foreach ExitCoverActions(CycleAction)
+		{
+			WaitForAction = X2Action_WaitForAnotherAction(class'X2Action_WaitForAnotherAction'.static.AddToVisualizationTree(ActionMetadata, AbilityContext, false, MoveTurnAction));
+			WaitForAction.ActionToWaitFor = CycleAction;
+			WaitForActions.AddItem(WaitForAction);
+		}
+		
 		// #1. END.
 
-		// Unit was killed by the attack.
-		DeathAction = X2Action_Death(VisMgr.GetNodeOfType(VisMgr.BuildVisTree, class'X2Action_Death', ActionMetadata.VisualizeActor));
-		if (DeathAction != none)
-		{
-			`LOG("Unit was killed by the attack",, 'IRITEST');
-		}
-
-		// #2. START. Insert an additional Damage Unit action. It will be responsible for playing the "unit shields themselves from the attack" animation.
+		// #2. START. Insert a Play Animation action for "unit shields themselves from the attack" animation.
 
 		// If this ability uses a grenade path, it may take a while for the projectile to arrive to the templar, so delay the animation action by amount of time that scales with distance between them.
-		// For the animation to look smooth, at least 0.25 seconds must pass between Additional Animation starting playing and projectiles hitting the target,
-		// but no more than 2 seconds, as shield is put away at that point.
-		// Grenade takes 1.5 seconds to fly 10 tiles and explode after being thrown, though this doesn't take throw animation time into account.
+			// For the animation to look smooth, at least 0.25 seconds must pass between Additional Animation starting playing and projectiles hitting the target,
+			// but no more than 2 seconds, as shield is put away at that point.
+			// Grenade takes 1.5 seconds to fly 10 tiles and explode after being thrown, though this doesn't take throw animation time into account.
 		// This delay is added on top of the variable amount of time required for the Move Turn action. 
 		if (bGrenadeLikeAbility)
 		{
 			`LOG("Ability uses grenade path, inserting delay action for:" @ 0.05f * SourceUnit.TileDistanceBetween(NewUnitState) @ "seconds.",, 'IRITEST');
-			TimedWait = X2Action_TimedWait(class'X2Action_TimedWait'.static.AddToVisualizationTree(ActionMetadata, AbilityContext, false, MoveTurnAction));
-			TimedWait.DelayTimeSec = 0.05f * SourceUnit.TileDistanceBetween(NewUnitState); // So 0.5 second delay at 10 tile distance.
+			TimedWait = X2Action_TimedWait(class'X2Action_TimedWait'.static.AddToVisualizationTree(ActionMetadata, AbilityContext, false,, WaitForActions));
+			TimedWait.DelayTimeSec = 0.075f * SourceUnit.TileDistanceBetween(NewUnitState); // So 0.75 second delay at 10 tile distance.
 
-			//AdditionalAction = X2Action_ApplyWeaponDamageToUnit_TemplarShield(class'X2Action_ApplyWeaponDamageToUnit_TemplarShield'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,, TimedWait));
+			AdditionalAnimationAction = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,, TimedWait));
 		}
-		//else // Otherwise make the additional action a child to Exit Cover Actions, so it can begin playing simultaneously to Fire Action.
-		//{
-			// Make the Move Turn action a parent of Exit Cover actions.
-			// This way they won't begin until Move Turn action is done.
-			// Ideally we'd want to let Exit Cover play out and delay the Fire Action instead if necessary, but putting stuff between Exit Cover and Fire Actions tends to break stuff.
-			//foreach ExitCoverActions(CycleAction)
-			//{
-			//	VisMgr.ConnectAction(CycleAction, VisMgr.BuildVisTree, false, MoveTurnAction);
-			//}
+		else
+		{
+			AdditionalAnimationAction = X2Action_PlayAnimation(class'X2Action_PlayAnimation'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,,, WaitForActions));
+		}
+		AdditionalAnimationAction.Params.AnimName = 'HL_Shield_Absorb';
 
-			
-		//}
-	
-		// This will play the "absorb damage" animation. Depending on what's happening, it will become a child of either Move Turn Action or Timed Wait action.
-		AdditionalAction = X2Action_ApplyWeaponDamageToUnit_TemplarShield(class'X2Action_ApplyWeaponDamageToUnit_TemplarShield'.static.AddToVisualizationTree(ActionMetadata, AbilityContext,, ActionMetadata.LastActionAdded));
-		CopyActionProperties(AdditionalAction, DamageAction);
-		AdditionalAction.bShowFlyovers = false;
-		AdditionalAction.CustomAnimName = 'HL_Shield_Absorb';
-
-		// Make child actions of the original Damage Unit action become children of the additional action.
+		// Make child actions of the original Damage Unit action become children of the animation action.
 		foreach DamageAction.ChildActions(ChildAction)
 		{
-			VisMgr.ConnectAction(ChildAction, VisMgr.BuildVisTree, false, AdditionalAction);
+			VisMgr.ConnectAction(ChildAction, VisMgr.BuildVisTree, false, AdditionalAnimationAction);
 		}
-		`LOG("Inserted additional animation action to play absorb anim",, 'IRITEST');
+		`LOG("Inserted additional animation action to play absorb anim. Unit is dead:" @ NewUnitState.IsDead(),, 'IRITEST');
 		// #2. END
 
-		// #3. START Replace the original Damage Unit action that would have played "unit hit" animation, but only if the shield fully absorbed all damage.
+		`LOG("Attack missed:" @ !WasUnitHit(AbilityContext, OldUnitState.ObjectID),, 'IRITEST');
+		`LOG("Unit is dead:" @ NewUnitState.IsDead(),, 'IRITEST');
+		`LOG("Unit was protected:" @ class'X2TemplarShield'.static.WasUnitFullyProtected(OldUnitState, NewUnitState),, 'IRITEST');
+		`LOG("Shield was absorbed:" @ class'X2TemplarShield'.static.WasShieldFullyConsumed(OldUnitState, NewUnitState),, 'IRITEST');
+
+		// If the attack missed, we stop here.
+		// TODO: This may need to be adjusted, because grazes count as a hit.
+		if (!WasUnitHit(AbilityContext, OldUnitState.ObjectID))
+		{
+			`LOG("Unit was not hit by this damage action:" @ !WasUnitHit(AbilityContext, OldUnitState.ObjectID) @ ", skipping to the next one.",, 'IRITEST');
+			continue;
+		}
+		// #3. START. Replace the original Damage Unit action that would have played "unit hit" animation, but only if the shield fully absorbed all damage.
 		// When this happens we don't want the unit to play any more "unit hit" animations, so we use a special replacement action that can do all the things the original Damage Unit action could,
 		// like showing flyover, but can be set to not play the "unit hit" animation.
 		if (class'X2TemplarShield'.static.WasUnitFullyProtected(OldUnitState, NewUnitState))
@@ -326,6 +324,7 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 			}
 
 			// Nuke the original action out of the tree.
+			// TODO: When doing this, have to replace all damage unit actions for this unit, not just the one we happen to be cycling through.
 			EmptyAction = X2Action_MarkerNamed(class'X2Action'.static.CreateVisualizationActionClass(class'X2Action_MarkerNamed', DamageAction.StateChangeContext));
 			EmptyAction.SetName("ReplaceDamageUnitAction");
 			VisMgr.ReplaceNode(EmptyAction, DamageAction);
@@ -333,11 +332,11 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 			// If unit didn't take any damage, but the shield was fully depleted by the attack, then play a different "absorb damage" animation that puts the shield away at the end.
 			if (class'X2TemplarShield'.static.WasShieldFullyConsumed(OldUnitState, NewUnitState))
 			{	
-				AdditionalAction.CustomAnimName = 'HL_Shield_AbsorbAndFold';
+				AdditionalAnimationAction.Params.AnimName = 'HL_Shield_AbsorbAndFold';
 				`LOG("Shield was fully consumed, but unit was fully protected, replacing additional anim into Absorb and Fold",, 'IRITEST');
 			}
 		}
-		else if (class'X2TemplarShield'.static.WasShieldFullyConsumed(OldUnitState, NewUnitState)) //if (!NewUnitState.IsUnitAffectedByEffectName(class'X2TemplarShield'.default.ShieldEffectName)) 
+		else if (class'X2TemplarShield'.static.WasShieldFullyConsumed(OldUnitState, NewUnitState))
 		{	 
 			// If the unit did in fact take some health damage despite being shielded (i.e. damage broke through the shield),
 			// Then we keep the original Damage Unit action in the tree. Its "unit hit" animation will interrupt the "absorb damage" animation from the additional action
@@ -351,6 +350,7 @@ static private function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 			PlayAnimation.Params.AnimName = 'ADD_Shield_Explode';
 			PlayAnimation.Params.Additive = true;
 
+			// Make this additive animation respond to the same input events as the damage action, so it plays when projectiles hit the unit.
 			PlayAnimation.ClearInputEvents();
 			foreach DamageAction.InputEventIDs(InputEvent)
 			{
