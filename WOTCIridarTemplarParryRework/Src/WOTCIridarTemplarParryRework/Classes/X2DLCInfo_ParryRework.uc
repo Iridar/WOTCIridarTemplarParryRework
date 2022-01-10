@@ -34,9 +34,25 @@ Replaced speech lines
 5. Some Fire Actions take so long that "Absorb and Fold" animation folds the shield before the attack has gone through. (Suggested fix: separate in two animation actions back to back)
 - Addressed as delaying the animation action.
 
-# Issues with Preview #8:
+# Issues with Preview #8 (resolved):
 - Attack that fully depleted shield HP but did not damage the unit was not recognized, the unit just played regular "shield" animation until it was interrupted by "hurt" animation. Happened only for the first time?
 - When killed by wrath cannon, the unit played "absorb and fold" animation before dying. I.e. death animation didn't interrupt the animation. Addressed already?
+
+TODO:
+Tie shield HP to gauntlet tier and make configurable.
+Reconnect the perk to the ability and the effect.
+Clean up assets of unused anims.
+Add code to replace the Parry ability
+Localization
+Icon
+
+Polish the deploy shield animation to not clip into the shoulder?
+Potentially rework shield PFX for better performance.
+Different shield effects for different tiers?
+
+
+# Done
+Clean up all classes, remove or unify logging.
 */
 
 
@@ -147,7 +163,7 @@ static event OnPostTemplatesCreated()
      {
         Template = X2WeaponTemplate(DataTemplate);
 
-        Template.Abilities.AddItem('IRI_PsionicShield');
+        Template.Abilities.AddItem('IRI_TemplarShield');
      }
 }
 

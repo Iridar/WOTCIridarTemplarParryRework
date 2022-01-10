@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # XCOM ModBuddy Solution File, Format Version 11.00
 VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{5DAE07AF-E217-45C1-8DE7-FF99D6011E8A}") = "WOTCIridarTemplarParryRework", "WOTCIridarTemplarParryRework\WOTCIridarTemplarParryRework.x2proj", "{732FE994-C6ED-48B4-959D-B2FACDDFB7DD}"
+Project("{5DAE07AF-E217-45C1-8DE7-FF99D6011E8A}") = "WOTCIridarTemplarParryRework", "WOTCIridarTemplarParryRework\WOTCIridarTemplarParryRework.x2proj", "{284B68F9-CAC1-48B0-83D4-BB3749180245}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +11,10 @@ Global
 		Default|XCOM 2 = Default|XCOM 2
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{732FE994-C6ED-48B4-959D-B2FACDDFB7DD}.Debug|XCOM 2.ActiveCfg = Debug|XCOM 2
-		{732FE994-C6ED-48B4-959D-B2FACDDFB7DD}.Debug|XCOM 2.Build.0 = Debug|XCOM 2
-		{732FE994-C6ED-48B4-959D-B2FACDDFB7DD}.Default|XCOM 2.ActiveCfg = Default|XCOM 2
-		{732FE994-C6ED-48B4-959D-B2FACDDFB7DD}.Default|XCOM 2.Build.0 = Default|XCOM 2
+		{284B68F9-CAC1-48B0-83D4-BB3749180245}.Debug|XCOM 2.ActiveCfg = Debug|XCOM 2
+		{284B68F9-CAC1-48B0-83D4-BB3749180245}.Debug|XCOM 2.Build.0 = Debug|XCOM 2
+		{284B68F9-CAC1-48B0-83D4-BB3749180245}.Default|XCOM 2.ActiveCfg = Default|XCOM 2
+		{284B68F9-CAC1-48B0-83D4-BB3749180245}.Default|XCOM 2.Build.0 = Default|XCOM 2
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -4,19 +4,19 @@ static function array<X2DataTemplate> CreateTemplates()
 {
 	local array<X2DataTemplate> Templates;
 
-	Templates.AddItem(Create_Ability());
+	Templates.AddItem(CreateTemplarShield());
 
 	return Templates;
 }
 
-static function X2AbilityTemplate Create_Ability()
+static function X2AbilityTemplate CreateTemplarShield()
 {
 	local X2AbilityTemplate					Template;
 	local X2AbilityCost_ActionPoints		ActionPointCost;
 	local X2Effect_TemplarShieldAnimations	AnimSetEffect;
 	local X2Effect_EnergyShield				ShieldedEffect;
 	
-	`CREATE_X2ABILITY_TEMPLATE(Template, 'IRI_PsionicShield');
+	`CREATE_X2ABILITY_TEMPLATE(Template, 'IRI_TemplarShield');
 
 	// Icon Setup
 	Template.IconImage = "img:///UILibrary_XPACK_Common.PerkIcons.UIPerk_Parry";
@@ -279,7 +279,7 @@ static function PrintActionRecursive(X2Action Action, int iLayer)
 {
 	local X2Action ChildAction;
 
-	`LOG("Action layer: " @ iLayer @ ": " @ Action.Class.Name @ Action.StateChangeContext.AssociatedState.HistoryIndex,, 'IRIPISTOLVIZ'); 
+	//`LOG("Action layer: " @ iLayer @ ": " @ Action.Class.Name @ Action.StateChangeContext.AssociatedState.HistoryIndex,, 'IRIPISTOLVIZ'); 
 	foreach Action.ChildActions(ChildAction)
 	{
 		PrintActionRecursive(ChildAction, iLayer + 1);

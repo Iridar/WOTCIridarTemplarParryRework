@@ -1,5 +1,7 @@
 class X2Effect_TemplarShieldAnimations extends X2Effect_AdditionalAnimSets;
 
+// A version of Additional AnimSet effects that is set up to remove itself whenever the unit's Shield HP is exhausted.
+
 function RegisterForEvents(XComGameState_Effect EffectGameState)
 {
 	local X2EventManager EventMgr;

@@ -1,26 +1,10 @@
 class X2Action_ApplyWeaponDamageToUnit_TemplarShield extends X2Action_ApplyWeaponDamageToUnit;
 
-// Conditionally replace the "unit gets shot" animation while psionic shield is active.
-// OR: Skip playing any animation at all if set up so.
-
-var bool bSkipAnimation;
-var name CustomAnimName;
-
-simulated function Name ComputeAnimationToPlay(const string AppendEffectString="")
-{	
-	//local name AnimName;
-	//AnimName = super.ComputeAnimationToPlay(AppendEffectString);
-	//`LOG("Computed AnimName:" @ AnimName,, 'IRITEST');
-
-	return CustomAnimName;
-}
+// A version of Damage Unit action does not play any animations and plays a different voiceover if the attack didn't cause HP damage.
 
 simulated function bool ShouldPlayAnimation()
 {
-	if (bSkipAnimation)
-		return false;
-
-	return super.ShouldPlayAnimation();
+	return false;
 }
 
 // Same as original, just using different speech when not taking health damage.
@@ -524,7 +508,7 @@ Begin:
 			}
 			else
 			{
-				`log("HurtAnim not playing", , 'XCom_Visualization');
+				//`LOG("HurtAnim not playing", , 'XCom_Visualization');
 			}
 
 			if( !bGoingToDeathOrKnockback && !bSkipWaitForAnim && (PlayingSequence != none))
@@ -619,7 +603,7 @@ Begin:
 			}
 			else
 			{
-				`log("DodgeAnim not playing");
+				//`LOG("DodgeAnim not playing");
 			}
 
 			if( !bGoingToDeathOrKnockback && (PlayingSequence != none))
