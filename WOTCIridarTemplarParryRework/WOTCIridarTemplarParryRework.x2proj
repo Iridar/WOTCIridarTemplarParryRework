@@ -12,7 +12,6 @@
     <Folder Include="Config\" />
     <Folder Include="Config\Base" />
     <Folder Include="Localization\" />
-    <Folder Include="Content" />
     <Folder Include="ContentForCook" />
     <Folder Include="Src\" />
     <Folder Include="Src\WOTCIridarTemplarParryRework\" />
@@ -29,6 +28,9 @@
       <SubType>Content</SubType>
     </Content>
     <Content Include="Config\Base\XComGameData.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Config\XComTemplateEditor.ini">
       <SubType>Content</SubType>
     </Content>
     <Content Include="ContentForCook\IRIParryRework.upk">
@@ -60,9 +62,6 @@
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WOTCIridarTemplarParryRework\Classes\X2EventListener_TemplarShield.uc">
-      <SubType>Content</SubType>
-    </Content>
-    <Content Include="Src\WOTCIridarTemplarParryRework\Classes\X2TemplarShield.uc">
       <SubType>Content</SubType>
     </Content>
   </ItemGroup>

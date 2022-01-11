@@ -105,7 +105,7 @@ private static function EventListenerReturn TemplarShield_OnAbilityActivated(Obj
 	History = `XCOMHISTORY;
 
 	TargetUnit = XComGameState_Unit(History.GetGameStateForObjectID(AbilityContext.InputContext.PrimaryTarget.ObjectID));
-	if (TargetUnit != none && TargetUnit.IsUnitAffectedByEffectName(class'X2TemplarShield'.default.ShieldEffectName))
+	if (TargetUnit != none && TargetUnit.IsUnitAffectedByEffectName(class'X2Effect_TemplarShield'.default.EffectName))
 	{
 		if (AbilityContext.PostBuildVisualizationFn.Find(ReplaceHitAnimation_PostBuildVis) == INDEX_NONE)
 		{
@@ -117,7 +117,7 @@ private static function EventListenerReturn TemplarShield_OnAbilityActivated(Obj
 		foreach AbilityContext.InputContext.MultiTargets(UnitRef)
 		{
 			TargetUnit = XComGameState_Unit(History.GetGameStateForObjectID(UnitRef.ObjectID));
-			if (TargetUnit != none && TargetUnit.IsUnitAffectedByEffectName(class'X2TemplarShield'.default.ShieldEffectName))
+			if (TargetUnit != none && TargetUnit.IsUnitAffectedByEffectName(class'X2Effect_TemplarShield'.default.EffectName))
 			{
 				if (AbilityContext.PostBuildVisualizationFn.Find(ReplaceHitAnimation_PostBuildVis) == INDEX_NONE)
 				{
@@ -204,7 +204,7 @@ private static function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 
 		HandledUnits.AddItem(OldUnitState.ObjectID); // Use a tracking array to make sure each unit's visualization is adjusted only once.
 
-		if (!OldUnitState.IsUnitAffectedByEffectName(class'X2TemplarShield'.default.ShieldEffectName)) // Check the old unit state specifically, as the attack could have removed the effect from the target.
+		if (!OldUnitState.IsUnitAffectedByEffectName(class'X2Effect_TemplarShield'.default.EffectName)) // Check the old unit state specifically, as the attack could have removed the effect from the target.
 			continue;
 
 		// Gather various action arrays we will need.
@@ -299,7 +299,7 @@ private static function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 		// So we replace all original Damage Unit actions for this unit with a custom version that does not play any animations,
 		// and it also plays a different voiceover, since the attack, even if it damages shield HP, doesn't have a negative effect on the soldier.
 		// Otherwise it functions identically and can do stuff like showing flyover.
-		if (class'X2TemplarShield'.static.WasUnitFullyProtected(OldUnitState, NewUnitState))
+		if (class'X2Effect_TemplarShield'.static.WasUnitFullyProtected(OldUnitState, NewUnitState))
 		{
 			foreach DamageUnitActions(CycleAction)
 			{
@@ -319,12 +319,12 @@ private static function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 			}
 
 			// If unit didn't take any damage, but the shield was fully depleted by the attack, then play a different "absorb damage" animation that puts the shield away at the end.
-			if (class'X2TemplarShield'.static.WasShieldFullyConsumed(OldUnitState, NewUnitState))
+			if (class'X2Effect_TemplarShield'.static.WasShieldFullyConsumed(OldUnitState, NewUnitState))
 			{	
 				AdditionalAnimationAction.Params.AnimName = 'HL_Shield_AbsorbAndFold';
 			}
 		}
-		else if (class'X2TemplarShield'.static.WasShieldFullyConsumed(OldUnitState, NewUnitState))
+		else if (class'X2Effect_TemplarShield'.static.WasShieldFullyConsumed(OldUnitState, NewUnitState))
 		{	 
 			// If the unit did in fact take some health damage despite being shielded (i.e. damage broke through the shield),
 			// Then we keep the original Damage Unit action in the tree. Its "unit hit" animation will interrupt the "absorb damage" animation from the additional action
