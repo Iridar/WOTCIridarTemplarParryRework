@@ -1,12 +1,11 @@
 class X2DLCInfo_ParryRework extends X2DownloadableContentInfo;
 
+var config bool bSkipTemplarShieldIntegration;
 /*
 Soul Shot - fire a psionic bow at the target. Deals high damage, but can miss.
 
 TODO:
 Icon
-
-Potentially rework shield PFX for better performance.
 
 Double check localization
 */
@@ -17,8 +16,12 @@ static event OnPostTemplatesCreated()
 	local X2SoldierClassTemplate			ClassTemplate;
 	local X2SoldierClassTemplateManager		ClassMgr;
 	local X2DataTemplate					DataTemplate;
+	local SoldierClassAbilityType			NewRandomAbility;
 	local int i;
 	local int j;
+
+	if (default.bSkipTemplarShieldIntegration)
+		return;
 
 	ClassMgr = class'X2SoldierClassTemplateManager'.static.GetSoldierClassTemplateManager();
 
@@ -39,7 +42,21 @@ static event OnPostTemplatesCreated()
 			}
 		}
 	}
+
+	// Compatibility with Proficiency Templars - Templar Shield is added as a random perk for the XCOM row.
+	ClassTemplate = ClassMgr.FindSoldierClassTemplate('Templar');
+	for (i = 0; i < ClassTemplate.RandomAbilityDecks.Length; i++)
+	{
+		if (ClassTemplate.RandomAbilityDecks[i].DeckName == 'WOTC_APA_Templar_Deck_2')
+		{
+			NewRandomAbility.AbilityName = 'IRI_TemplarShield';
+			NewRandomAbility.ApplyToWeaponSlot = eInvSlot_PrimaryWeapon;
+
+			ClassTemplate.RandomAbilityDecks[i].Abilities.AddItem(NewRandomAbility);
+		}
+	}
 }
+
 
 static event OnLoadedSavedGame()
 {
@@ -56,6 +73,10 @@ static event OnLoadedSavedGameToStrategy()
 	local StateObjectReference				UnitRef;
 	local XComGameState_Unit				UnitState;
 	local int i;
+	local int j;
+
+	if (default.bSkipTemplarShieldIntegration)
+		return;
 
 	History = `XCOMHISTORY;	
 	XComHQ = `XCOMHQ;
@@ -68,14 +89,16 @@ static event OnLoadedSavedGameToStrategy()
 		UnitState = XComGameState_Unit(History.GetGameStateForObjectID(UnitRef.ObjectID));
 		if (UnitState.IsSoldier())
 		{
-			
-			for (i = UnitState.AbilityTree[0].Abilities.Length - 1; i >= 0; i--)
+			for (i = 0; i < UnitState.AbilityTree.Length; i++)
 			{
-				if (UnitState.AbilityTree[0].Abilities[i].AbilityName == 'Parry')
+				for (j = 0; j < UnitState.AbilityTree[i].Abilities.Length; j++)
 				{
-					UnitState = XComGameState_Unit(NewGameState.ModifyStateObject(UnitState.Class, UnitState.ObjectID));
-					UnitState.AbilityTree[0].Abilities[i].AbilityName = 'IRI_TemplarShield';
-					bChange = true;
+					if (UnitState.AbilityTree[i].Abilities[j].AbilityName == 'Parry')
+					{
+						UnitState = XComGameState_Unit(NewGameState.ModifyStateObject(UnitState.Class, UnitState.ObjectID));
+						UnitState.AbilityTree[i].Abilities[j].AbilityName = 'IRI_TemplarShield';
+						bChange = true;
+					}
 				}
 			}
 		}
@@ -101,11 +124,10 @@ static function bool AbilityTagExpandHandler_CH(string InString, out string OutS
     if (InString != "TEMPLAR_SHIELD_TAG")
         return false;
 
-    History = `XCOMHISTORY;
-
     UnitState = XComGameState_Unit(StrategyParseObj);
 	if (UnitState == none)
 	{
+		History = `XCOMHISTORY;
 		EffectState = XComGameState_Effect(ParseObj);
 		if (EffectState != none)
 		{

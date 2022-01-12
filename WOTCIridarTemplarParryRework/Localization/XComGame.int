@@ -1,6 +1,6 @@
 [IRI_TemplarShield X2AbilityTemplate]
 LocFriendlyName="Templar Shield"
-LocLongDescription="Use your shard gauntlets to generate a psionic shield that grants <Ability:TEMPLAR_SHIELD_TAG/> Shield HP that will last until the start of your next turn. Can be used with Momentum actions."
-LocHelpText="Use your shard gauntlets to generate a psionic shield that grants <Ability:TEMPLAR_SHIELD_TAG/> Shield HP that will last until the start of your next turn. Can be used with Momentum actions."
-LocPromotionPopupText="Shield strength will increase with shard gauntlets' tech level."
+LocLongDescription="Use your shard gauntlets to generate a psionic shield and gain <Ability:TEMPLAR_SHIELD_TAG/> Shield HP that will last until the start of your next turn. Can be used with Momentum actions."
+LocHelpText="Use your shard gauntlets to generate a psionic shield and gain <Ability:TEMPLAR_SHIELD_TAG/> Shield HP that will last until the start of your next turn. Can be used with Momentum actions."
+LocPromotionPopupText="<bullet/> Ends turn when used.<br/><bullet/>Shield strength will increase with shard gauntlets' tech level."
 ;LocFlyOverText="Templar Shield"
