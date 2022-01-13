@@ -197,7 +197,7 @@ private static function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 	foreach FindActions(FindAction)
 	{
 		ActionMetadata = FindAction.Metadata;
-		OldUnitState = XComGameState_Unit(FindAction.Metadata.StateObject_OldState); // Unit State as it was before they were hit by the attack.
+		OldUnitState = XComGameState_Unit(ActionMetadata.StateObject_OldState); // Unit State as it was before they were hit by the attack.
 		NewUnitState = XComGameState_Unit(ActionMetadata.StateObject_NewState);
 		if (OldUnitState == none || NewUnitState == none || HandledUnits.Find(OldUnitState.ObjectID) != INDEX_NONE)
 			continue;
