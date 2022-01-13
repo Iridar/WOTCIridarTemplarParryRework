@@ -3,7 +3,7 @@
 More info here: https://www.patreon.com/Iridar
 
 
-[WOTC] Iridar's Templar Parry Rework
+[WOTC] Iridar's Templar Shield
 
 This mod replaces Templars' Parry ability with [b]Templar Shield[/b]. When activated, Templar Shield grants 4/7/10 Shield HP until the start of your next turn. It can be used with both regular and Momentum action points.
 

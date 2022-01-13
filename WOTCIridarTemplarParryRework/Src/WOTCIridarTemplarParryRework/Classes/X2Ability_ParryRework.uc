@@ -19,9 +19,10 @@ static function X2AbilityTemplate CreateTemplarShield()
 	`CREATE_X2ABILITY_TEMPLATE(Template, 'IRI_TemplarShield');
 
 	// Icon Setup
-	Template.IconImage = "img:///UILibrary_XPACK_Common.PerkIcons.UIPerk_Parry";
+	Template.IconImage = "img:///IRIParryReworkPerk.UIPerk_TemplarShield";
 	Template.AbilitySourceName = 'eAbilitySource_Psionic';
 	Template.eAbilityIconBehaviorHUD = eAbilityIconBehavior_AlwaysShow;
+	Template.ShotHUDPriority = class'UIUtilities_Tactical'.const.CLASS_CORPORAL_PRIORITY;
 
 	// Shooter Conditions
 	Template.AbilityShooterConditions.AddItem(default.LivingShooterProperty);
