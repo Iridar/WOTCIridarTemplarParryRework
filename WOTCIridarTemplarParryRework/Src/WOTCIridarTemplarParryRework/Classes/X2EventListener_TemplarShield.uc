@@ -20,7 +20,9 @@ private static function CHEventListenerTemplate CreateTemplarShieldListenerTempl
 
 	Template.AddCHEvent('OverrideHitEffects', TemplarShield_OnOverrideHitEffects, ELD_Immediate, 40);
 	Template.AddCHEvent('OverrideMetaHitEffect', TemplarShield_OnOverrideMetaHitEffect, ELD_Immediate, 40);
-	Template.AddCHEvent('AbilityActivated', TemplarShield_OnAbilityActivated, ELD_OnStateSubmitted, 50);
+
+	// Has to be ELD_Immediate so that we can get the target Unit State from History before the ability has gone through and see if it had the Templar Shield effect.
+	Template.AddCHEvent('AbilityActivated', TemplarShield_OnAbilityActivated, ELD_Immediate, 50);
 
 	return Template;
 }
@@ -86,18 +88,15 @@ private static function EventListenerReturn TemplarShield_OnOverrideMetaHitEffec
     return ELR_NoInterrupt;
 }
 
-private static function EventListenerReturn TemplarShield_OnAbilityActivated(Object EventData, Object EventSource, XComGameState GameState, Name Event, Object CallbackData)
+private static function EventListenerReturn TemplarShield_OnAbilityActivated(Object EventData, Object EventSource, XComGameState NewGameState, Name Event, Object CallbackData)
 {
 	local XComGameStateContext_Ability	AbilityContext;
 	local XComGameState_Unit			TargetUnit;
 	local StateObjectReference			UnitRef;
 	local XComGameStateHistory			History;
-
-	if (GameState == none || GameState.GetContext().InterruptionStatus == eInterruptionStatus_Interrupt)
-		return ELR_NoInterrupt;
 		
-	AbilityContext = XComGameStateContext_Ability(GameState.GetContext());
-	if (AbilityContext == none)
+	AbilityContext = XComGameStateContext_Ability(NewGameState.GetContext());
+	if (AbilityContext == none || AbilityContext.InterruptionStatus == eInterruptionStatus_Interrupt)
 		return ELR_NoInterrupt;
 
 	// Insert a Post Build Vis delegate whenever an ability targets a unit affected by Templar Shield
@@ -199,6 +198,7 @@ private static function ReplaceHitAnimation_PostBuildVis(XComGameState Visualize
 		ActionMetadata = FindAction.Metadata;
 		OldUnitState = XComGameState_Unit(ActionMetadata.StateObject_OldState); // Unit State as it was before they were hit by the attack.
 		NewUnitState = XComGameState_Unit(ActionMetadata.StateObject_NewState);
+
 		if (OldUnitState == none || NewUnitState == none || HandledUnits.Find(OldUnitState.ObjectID) != INDEX_NONE)
 			continue;
 
