@@ -11,6 +11,7 @@
   <ItemGroup>
     <Folder Include="Config\" />
     <Folder Include="Config\Base" />
+    <Folder Include="Config\Compatibility" />
     <Folder Include="Localization\" />
     <Folder Include="ContentForCook" />
     <Folder Include="Src\" />
@@ -28,6 +29,9 @@
       <SubType>Content</SubType>
     </Content>
     <Content Include="Config\Base\XComGameData.ini">
+      <SubType>Content</SubType>
+    </Content>
+    <Content Include="Config\Compatibility\XComShieldReplacer.ini">
       <SubType>Content</SubType>
     </Content>
     <Content Include="Config\XComTemplateEditor.ini">
@@ -59,9 +63,6 @@
       <SubType>Content</SubType>
     </Content>
     <Content Include="Src\WOTCIridarTemplarParryRework\Classes\X2Effect_TemplarShieldAnimations.uc">
-      <SubType>Content</SubType>
-    </Content>
-    <Content Include="Src\WOTCIridarTemplarParryRework\Classes\X2EventListener_TemplarShield.uc">
       <SubType>Content</SubType>
     </Content>
   </ItemGroup>
