@@ -1,14 +1,6 @@
 class X2DLCInfo_ParryRework extends X2DownloadableContentInfo;
 
 var config bool bSkipTemplarShieldIntegration;
-/*
-Soul Shot - fire a psionic bow at the target. Deals high damage, but can miss.
-
-TODO:
-Icon
-
-Double check localization
-*/
 
 // Replace any instance of "Parry" ability in any soldier class' ability tree with Templar Shield.
 static event OnPostTemplatesCreated()

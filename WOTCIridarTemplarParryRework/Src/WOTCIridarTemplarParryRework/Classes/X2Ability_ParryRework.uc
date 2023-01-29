@@ -66,15 +66,18 @@ static function X2AbilityTemplate CreateTemplarShield()
 	Template.bSkipExitCoverWhenFiring = true;
 	Template.bSkipFireAction = false;
 	Template.OverrideAbilityAvailabilityFn = TemplarShield_OverrideAbilityAvailability;
-
-	Template.OverrideAbilities.AddItem('ParryActivate');
-	Template.OverrideAbilities.AddItem('Parry');
 	Template.DefaultSourceItemSlot = eInvSlot_PrimaryWeapon;
 
+	if (!class'X2DLCInfo_ParryRework'.default.bSkipTemplarShieldIntegration)
+	{
+		Template.OverrideAbilities.AddItem('ParryActivate');
+		Template.OverrideAbilities.AddItem('Parry');
+	}
+	
 	return Template;
 }
 
-private static function TemplarShield_OverrideAbilityAvailability(out AvailableAction Action, XComGameState_Ability AbilityState, XComGameState_Unit OwnerState)
+static private function TemplarShield_OverrideAbilityAvailability(out AvailableAction Action, XComGameState_Ability AbilityState, XComGameState_Unit OwnerState)
 {
 	if (Action.AvailableCode == 'AA_Success')
 	{
